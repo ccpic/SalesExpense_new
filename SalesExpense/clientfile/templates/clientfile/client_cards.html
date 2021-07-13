@@ -1,0 +1,122 @@
+{% load tags %}
+{% load el_pagination_tags %}
+
+{% if client_list %}
+<div class="ui{% if request.user_agent.is_mobile %} two {% else %} four{% endif %} cards">
+    {% for client in client_list %}
+    <a class="ui card" href="{% url 'clientfile:client_detail' client.pk %}">
+        <div class="content">
+            <div class="meta" style="float: right">{{ client.bu }}</div>
+            <div class="header">{{ client.name }}</div>
+        </div>
+        <div class="content">
+            <div class="meta">
+                <div class="ui list">
+                    <div class="item">
+                        <span>{{ client.hospital }}</span>
+                    </div>
+                    <div class="item">
+                        <span>{{ client.dept }}</span>
+                        <span>{{ client.title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="ui list">
+                <div class="item">
+                    <div class="ui red ribbon label">相关病人</div>
+                    <span style="color: #000000">{{ client.monthly_patients|stringformat:".0f" }}</span>
+                </div>
+                <div class="item">
+                    <div class="ui blue ribbon label">潜力评级</div>
+                    <div class="ui star rating" data-rating="{{ client.potential_level }}" data-max-rating="3"></div>
+                </div>
+            </div>
+        </div>
+        <div class="extra">
+            <div class="left floated meta">
+                <i class="marker icon"></i><span>{{ client.province }}</span>
+            </div>
+            <div class="right floated meta">
+                <span>{{ client.dsm }}</span>
+                <span>{{ client.rsp }}</span>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+<div class="ui hidden divider"></div>
+
+
+<div class="ui pagination menu">
+    <a class="item" onclick="getAjaxData(1)" href="javascript:void(0)">&lt;&lt;</a>
+
+    {% if client_list.number|add:'-4' > 1 %}
+    <a class="item" onclick="getAjaxData({{ client_list.number|add:'-5' }})"  href="javascript:void(0)">&hellip;</a>
+    {% endif %}
+
+
+    {% for n in num_pages|times %}
+    {% if n == client_list.number %}
+    <span class="active item" onclick="getAjaxData({{ n }})" href="javascript:void(0)">{{ n }}</span>
+    {% elif n > client_list.number|add:'-5' and n < client_list.number|add:'5' %}
+    <a class="item" onclick="getAjaxData({{ n }})" href="javascript:void(0)">{{ n }}</a>
+    {% endif %}
+    {% endfor %}
+
+
+    {% if num_pages > client_list.number|add:'4' %}
+    <a class="item" onclick="getAjaxData({{ client_list.number|add:'5' }})" href="javascript:void(0)">&hellip;</a>
+    {% endif %}
+
+    <a class="item" onclick="getAjaxData({{ num_pages }})" href="javascript:void(0)">&gt;&gt;</a>
+
+</div>
+
+<div class="ui top right attached label">
+    <span>&nbsp;&nbsp;当前显示第
+    {{ client_list.start_index }}-{{ client_list.end_index }} of {{ record_n }}条档案
+    </span>
+</div>
+{% endif %}
+
+
+<script>
+    $(document).ready(function(){
+        $(".rating").rating('disable');
+    });
+
+</script>
+
+<script type="text/javascript">
+    function getAjaxData(page){
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        var data = {
+            "province-select": $("#province-select").val(),
+            "bu-select": $("#bu-select").val(),
+            "rd-select": $("#rd-select").val(),
+            "rm-select": $("#rm-select").val(),
+            "dsm-select": $("#dsm-select").val(),
+            "rsp-select": $("#rsp-select").val(),
+            "xltid-select": $("#xltid-select").val(),
+            "hosp-select": $("#hosp-select").val(),
+            "dc-select": $("#dc-select").val(),
+            "hplevel-select": $("#hplevel-select").val(),
+            "hpaccess-select": $("#hpaccess-select").val(),
+            "dept-select": $("#dept-select").val(),
+            "title-select": $("#title-select").val(),
+            "page":page
+        };
+        $.ajax({
+            type:"POST",
+            url:'{% url 'clientfile:analysis' %}',
+            data:data,
+            success:function(ret){
+                $('#client_cards').html(ret);
+            }
+        })
+    }
+ </script>

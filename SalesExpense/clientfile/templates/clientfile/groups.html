@@ -1,0 +1,274 @@
+<!-- extends表明此页面继承自 base.html 文件 -->
+{% extends "sheets/base.html" %}
+{% load static %}
+{% load tags %}
+
+<!-- 写入 base.html 中定义的 title -->
+{% block title %}
+DSM客户档案管理
+{% endblock title %}
+
+<!-- 隐藏分隔条 -->
+<div class="ui hidden divider">
+
+</div>
+
+
+
+<!-- 写入 base.html 中定义的 content -->
+{% block index %}
+<div id="pusher" class="pusher" style="padding-top:100px">
+    <div class="ui container">
+        <h2 class="ui blue dividing header">分组事件管理</h2>
+        <div type="button" class="ui blue submit button" id="button_add_group">
+            新建分组事件
+        </div>
+        <div type="button" class="ui classic blue button" id="export_excel" onclick="location.href='{% url 'clientfile:export_groups' %}'">
+                <i class="file excel outline icon"></i> 导出至Excel
+        </div>
+        <div class="ui modal" id="modal_add_group">
+            <i class="close icon"></i>
+            <div class="header">
+                新建分组事件
+            </div>
+            <div class="content">
+                <form class="ui form" id="form_add_group">
+                    {% csrf_token %}
+
+                    <div class="two fields">
+                        <div class="field">
+                            <label>分组事件名称</label>
+                            <input type="text" name="note_text" id="text_name" placeholder="分组事件名称">
+                        </div>
+                        <div class="field">
+                            <label>备注</label>
+                            <input type="text" name="note_text" id="text_note" placeholder="备注（可为空）">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>搜索客户</label>
+                        <div class="ui fluid search">
+                            <input class="prompt" type="text"
+                                   placeholder="输入单个关键字同时搜索医院/客户姓名，输入'姓名 医院'格式精确搜索某医院的某客户（如'王 华西'）">
+                            <div class="results"></div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>已选择客户</label>
+                        <div class="scrolling content" style="max-height:300px;overflow-y: auto;">
+                            <table class="ui table" id="client-selected">
+                                <thead>
+                                <tr>
+                                    <th style="display:none">id</th>
+                                    <th>医院</th>
+                                    <th>科室</th>
+                                    <th>姓名</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="ui error message" id="error_message_m"></div>
+                </form>
+            </div>
+            <div class="actions">
+                <div class="ui black deny button">
+                    取消
+                </div>
+                <div class="ui positive right labeled icon button">
+                    确认创建
+                    <i class="checkmark icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="ui modal" id="modal_delete_group">
+            <i class="close icon"></i>
+            <div class="header">
+                警告
+            </div>
+            <div class="content" id="delete_warning">
+            </div>
+            <div class="actions">
+                <div class="ui black deny button">
+                    取消
+                </div>
+                <div class="ui positive right labeled icon button">
+                    确认删除
+                    <i class="checkmark icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="ui hidden divider"></div>
+        <h2 class="ui blue dividing header">现有分组事件</h2>
+        <div id="group_cards">
+            {% include 'clientfile/group_cards.html' %}
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'}
+        });
+        $("#button_add_group").click(function () {
+                $('#modal_add_group').modal("setting", {
+                    autofocus: false,
+                    closable: false,
+                    onApprove: function () {
+                        var validated = $('#form_add_group').form('validate form');
+                        if (!validated) {
+                            return false;
+                        }
+
+                        // 打包成get请求发送的数据
+                        client_selected = [];
+                        $('td:eq(0)', $('#client-selected tr')).each(function()
+                        {
+                           client_selected.push($(this).html());
+                        });
+                        var data = {
+                            "name": $("#text_name").val(),
+                            'note': $("#text_note").val(),
+                            "clients-select": client_selected,
+
+                        };
+                        $.ajax({
+                            // 请求的url
+                            url: '{% url 'clientfile:add_group' %}',
+                            // 请求的type
+                            type: 'POST',
+                            // 发送的数据
+                            data: data,
+                            // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                            success: function (ret) {     //成功执行
+                                location.reload();
+                            }
+                        });
+                    }
+                }).modal("show");
+            }
+        );
+    })
+</script>
+
+<script>
+    var url = "{% url 'clientfile:client_search' 'QUERYPLACEHOLDER' %}".replace(
+        'QUERYPLACEHOLDER', '{query}'
+    )
+    $('.ui.fluid.search').search({
+        type: 'category',
+        apiSettings: {
+            onResponse: function (searchResponse) {
+                var
+                    response = {
+                        results: {}
+                    }
+                ;
+
+                // translate API response to work with search
+                $.each(JSON.parse(searchResponse.data), function (index, item) {
+                    var
+                        hospital = item.fields.hospital || 'Unknown',
+                        maxResults = 8
+                    ;
+                    if (index >= maxResults) {
+                        return false;
+                    }
+                    // create new Hospital category
+                    if (response.results[hospital] === undefined) {
+                        response.results[hospital] = {
+                            name: hospital,
+                            results: []
+                        };
+                    }
+                    // add result to category
+                    response.results[hospital].results.push({
+                        title: item.fields.name,
+                        description: item.fields.dept + " " + item.fields.title,
+                        hospital: item.fields.hospital,
+                        dept: item.fields.dept,
+                        pk: item.pk
+                    });
+                });
+                return response;
+            },
+            url: url
+        },
+       onSelect: function (result,response) {
+            var row = $("#client-selected tr:has(td:contains(" + result.pk +"))")
+            row.each(function () {
+                 $(this).remove();
+            });
+            $('#client-selected tbody').append('<tr><td style="display:none">' + result.pk +
+                '</td><td>' + result.hospital +
+                '</td><td>' + result.dept +
+                '</td><td>' +result.title +
+                '</td><td class="collapsing"><button class="ui negative basic button"' + ' onclick="$(this).closest(\'tr\').remove();">删除</button>'+
+                '</td></tr>');
+            return true;
+        }
+    });
+</script>
+
+<script>
+    function delete_group(id, name) {
+        $('#delete_warning').html('您确认要删除分组事件 '+name+' 吗？');
+        $('#modal_delete_group')
+            .modal("setting", {
+                closable: false,
+                onApprove: function () {
+                    var data = {
+                        "id": id
+                    };
+                    $.ajax({
+                        // 请求的url
+                        url: '{% url 'clientfile:delete_group' %}',
+                        // 请求的type
+                        type: 'POST',
+                        // 发送的数据
+                        data: data,
+                        // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                        success: function (ret) {     //成功执行
+                           location.reload();
+                        }
+                    });
+                }
+            }).modal("show");
+    }
+</script>
+
+<script>
+    $('#form_add_group')
+        .form({
+            fields: {
+                name: {
+                    identifier: 'text_name',
+                    rules: [
+                        {
+                            type: 'empty',
+                            prompt: '分组事件名称不能为空'
+                        },
+                        {
+                            type: 'maxLength[25]',
+                            prompt: '分组事件名称不能超过25个字符'
+                        }
+                    ]
+                }
+            }
+        })
+    ;
+</script>
+
+<style>
+    .ui.table thead tr:first-child > th {
+        position: sticky !important;
+        top: 0;
+        z-index: 2;
+    }
+</style>
+{% endblock index %}

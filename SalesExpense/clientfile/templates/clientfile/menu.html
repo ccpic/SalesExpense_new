@@ -1,0 +1,42 @@
+<div class="ui container">
+    <div class="ui form">
+        <form action="" method="post">
+            {% csrf_token %}
+            <h3 class="ui header" id="data_filter">数据筛选</h3>
+            <div class="field">
+                {% for key, value in field_list.items %}
+                <div class="field">
+                    <select name="{{ value.select }}" id="{{ value.select|slice:":-2" }}" multiple=""
+                            class="ui fluid search dropdown">
+                        <option value="">{{ key }}</option>
+                        {% for item in value.options %}
+                            <option value="{{ item }}">{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+            </div>
+            <br>
+            <div class="ui buttons">
+                <!--<input class="ui button" type="reset" id="reset"/>-->
+                <!--<div class="or"></div>-->
+                <input class="ui blue button" type='button' id='AJAX_get' value="筛选"/>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<script>
+function submitForm(){
+//获取form表单对象
+var form = document.getElementById("myform");
+form.submit();//form表单提交
+
+}
+</script>
+<script>
+    $('.ui.fluid.search.dropdown')
+      .dropdown({ fullTextSearch: true });
+
+</script>
