@@ -54,10 +54,10 @@ def add_img_slide(title=None, layout_style=0, *args):
 
 if __name__ == "__main__":
     year = 2021
-    month = 6
+    month = 7
     # 准备数据
-    df_pre = pd.read_excel("./Reporting/20210601112540.xlsx")  # 作为对比的上个时期的档案数据
-    df_post = pd.read_excel("./Reporting/20210701110520.xlsx")  # 作为对比的上个时期的档案数据
+    df_pre = pd.read_excel("./Reporting/20210701110520.xlsx")  # 作为对比的上个时期的档案数据
+    df_post = pd.read_excel("./Reporting/20210802112700.xlsx")  # 作为对比的上个时期的档案数据
     # df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
 
     df_pre["月份"] = year * 100 + month - 1
@@ -376,7 +376,7 @@ if __name__ == "__main__":
         )
 
     # Page25-27 各地区经理档案数量相关指标汇总
-    # range_list = ((0, 18), (18, 36), (36, 54))
+    # range_list = ((0, 18), (18, 36), (36, 55))
     range_list = ((0, 20), (20, 40), (40, 61))
     for i, r in enumerate(range_list):
         add_img_slide(
@@ -493,7 +493,7 @@ if __name__ == "__main__":
             0,
             {
                 "img": post.plot_bubble_number_potential(
-                    idx, z_scale=0.02, labelLimit=100
+                    idx, z_scale=0.02, label_limit=100
                 ),
                 "top": TOP,
                 "left": LEFT_ONE_IMAGE,
@@ -505,7 +505,7 @@ if __name__ == "__main__":
             0,
             {
                 "img": post.plot_bubble_number_potential(
-                    idx, z_scale=0.07, labelLimit=100, dimension="rsp"
+                    idx, z_scale=0.07, label_limit=100, dimension="rsp"
                 ),
                 "top": TOP,
                 "left": LEFT_ONE_IMAGE,

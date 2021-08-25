@@ -83,7 +83,15 @@ COLOR_DICT = {
     "茶碱,盐酸甲麻黄碱,暴马子浸膏": "saddlebrown",
 }
 
-COLOR_LIST = ["#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD", "#8C564B", "#E377C2"]
+COLOR_LIST = [
+    "#1F77B4",
+    "#FF7F0E",
+    "#2CA02C",
+    "#D62728",
+    "#9467BD",
+    "#8C564B",
+    "#E377C2",
+]
 
 
 # COLOR_LIST = [
@@ -121,7 +129,16 @@ def get_cmap(n, name="hsv"):
 
 
 def plot_grid_barh(
-    df, savefile, formats, title=None, vline_value=None, fontsize=16, width=15, height=6, df_pre=None, formats_diff=None
+    df,
+    savefile,
+    formats,
+    title=None,
+    vline_value=None,
+    fontsize=16,
+    width=15,
+    height=6,
+    df_pre=None,
+    formats_diff=None,
 ):
     fig = plt.figure(figsize=(width, height), facecolor="white")
 
@@ -139,11 +156,19 @@ def plot_grid_barh(
             df_pre = df_pre.reindex(df_bar.index)
             df_diff = df_bar - df_pre.iloc[:, i].fillna(0)
 
-        ax = df_bar.plot(kind="barh", alpha=0.8, color=COLOR_LIST[i], edgecolor="black", zorder=3)
+        ax = df_bar.plot(
+            kind="barh", alpha=0.8, color=COLOR_LIST[i], edgecolor="black", zorder=3
+        )
 
         # 添加平均值竖线
         if vline_value is not None:
-            ax.axvline(vline_value[i], color=COLOR_LIST[i], linestyle="--", linewidth=1, zorder=1)
+            ax.axvline(
+                vline_value[i],
+                color=COLOR_LIST[i],
+                linestyle="--",
+                linewidth=1,
+                zorder=1,
+            )
             ax.text(
                 vline_value[i],
                 ax.get_ylim()[1] + 0.1,
@@ -165,7 +190,15 @@ def plot_grid_barh(
                 fontcolor = "white"
 
             # 添加绝对值数字标签
-            ax.text(pos_x, j, formats[i].format(v), ha=ha, va="center", color=fontcolor, fontsize=fontsize)
+            ax.text(
+                pos_x,
+                j,
+                formats[i].format(v),
+                ha=ha,
+                va="center",
+                color=fontcolor,
+                fontsize=fontsize,
+            )
             # 添加和pre差值数字标签
             if df_pre is not None and df_pre.empty is False:
                 idx = df_bar.index[j]
@@ -197,7 +230,14 @@ def plot_grid_barh(
                         zorder=20,
                         **NUM_FONT
                     )
-                    t.set_bbox(dict(facecolor=edgecolor_diff, alpha=0.25, edgecolor=edgecolor_diff, zorder=20))
+                    t.set_bbox(
+                        dict(
+                            facecolor=edgecolor_diff,
+                            alpha=0.25,
+                            edgecolor=edgecolor_diff,
+                            zorder=20,
+                        )
+                    )
             ax.axhline(j - 0.5, color="grey", linestyle="--", linewidth=0.5)  # 添加间隔线
 
         ax.invert_yaxis()  # 翻转y轴，最上方显示排名靠前的序列
@@ -235,7 +275,15 @@ def plot_hist(
     df_pre=None,
 ):
     fig, ax = plt.subplots(figsize=(width, height))
-    df.plot(kind="hist", density=True, bins=bins, ax=ax, color="grey", legend=None, alpha=0.5)
+    df.plot(
+        kind="hist",
+        density=True,
+        bins=bins,
+        ax=ax,
+        color="grey",
+        legend=None,
+        alpha=0.5,
+    )
     if show_kde:
         ax_new = ax.twinx()
         df.plot(kind="kde", ax=ax_new, color="darkorange", legend=None)
@@ -257,13 +305,20 @@ def plot_hist(
         # 计算百分位数据
         percentiles = []
         for i in range(tiles):
-            percentiles.append([df.quantile((i) / tiles), "D" + str(i + 1)])  # 十分位Decile
+            percentiles.append(
+                [df.quantile((i) / tiles), "D" + str(i + 1)]
+            )  # 十分位Decile
 
         # 在hist图基础上绘制百分位
         for i, percentile in enumerate(percentiles):
             ax.axvline(percentile[0], color="crimson", linestyle=":")  # 竖分隔线
             ax.text(
-                percentile[0], ax.get_ylim()[1] * 0.97, int(percentile[0]), ha="center", color="crimson", fontsize=10
+                percentile[0],
+                ax.get_ylim()[1] * 0.97,
+                int(percentile[0]),
+                ha="center",
+                color="crimson",
+                fontsize=10,
             )
             if i < tiles - 1:
                 ax.text(
@@ -274,7 +329,8 @@ def plot_hist(
                 )
             else:
                 ax.text(
-                    percentiles[tiles - 1][0] + (ax.get_xlim()[1] - percentiles[tiles - 1][0]) / 2,
+                    percentiles[tiles - 1][0]
+                    + (ax.get_xlim()[1] - percentiles[tiles - 1][0]) / 2,
                     ax.get_ylim()[1],
                     percentile[1],
                     ha="center",
@@ -303,7 +359,8 @@ def plot_hist(
         ax.text(
             median,
             ax.get_ylim()[1] * yindex_median,
-            "中位数：%s(%s)" % ("{:.0f}".format(median), "{:+.0f}".format(median - median_pre)),
+            "中位数：%s(%s)"
+            % ("{:.0f}".format(median), "{:+.0f}".format(median - median_pre)),
             ha=pos_median,
             color="crimson",
         )
@@ -363,7 +420,9 @@ def plot_line(
         )
 
         endpoint = -1
-        while isinstance(df.values[endpoint][count], str) or df.values[endpoint][count] == float("inf"):
+        while isinstance(df.values[endpoint][count], str) or df.values[endpoint][
+            count
+        ] == float("inf"):
             endpoint = endpoint - 1
             if abs(endpoint) == len(df.index):
                 break
@@ -380,7 +439,9 @@ def plot_line(
                 )
 
         startpoint = 0
-        while isinstance(df.values[startpoint][count], str) or df.values[startpoint][count] == float("inf"):
+        while isinstance(df.values[startpoint][count], str) or df.values[startpoint][
+            count
+        ] == float("inf"):
             startpoint = startpoint + 1
             if startpoint == len(df.index):
                 break
@@ -402,7 +463,9 @@ def plot_line(
     plt.grid(which="major", linestyle=":", linewidth="0.5", color="grey")
 
     # Rotate labels in X axis as there are too many
-    plt.setp(ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center")
+    plt.setp(
+        ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center"
+    )
 
     # Change the format of Y axis to 'x%'
     if ylabelperc == True:
@@ -416,7 +479,12 @@ def plot_line(
     # Shrink current axis by 20% and put a legend to the right of the current axis
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), labelspacing=1.5, prop={"family": "SimHei"})
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1, 0.5),
+        labelspacing=1.5,
+        prop={"family": "SimHei"},
+    )
 
     ymax = ax.get_ylim()[1]
     if ymax > 3:
@@ -426,7 +494,17 @@ def plot_line(
     save_plot(savefile)
 
 
-def plot_line_simple(df, savefile, width=15, height=6, xlabelrotation=0, yfmt="{:.0%}", title="", xtitle="", ytitle=""):
+def plot_line_simple(
+    df,
+    savefile,
+    width=15,
+    height=6,
+    xlabelrotation=0,
+    yfmt="{:.0%}",
+    title="",
+    xtitle="",
+    ytitle="",
+):
     # Choose seaborn style
     sns.set_style("white")
 
@@ -439,14 +517,22 @@ def plot_line_simple(df, savefile, width=15, height=6, xlabelrotation=0, yfmt="{
         markerstyle = "o"
 
         plt.plot(
-            df.index, df[column], linewidth=2, label=column, marker=markerstyle, markersize=5, markerfacecolor="white"
+            df.index,
+            df[column],
+            linewidth=2,
+            label=column,
+            marker=markerstyle,
+            markersize=5,
+            markerfacecolor="white",
         )
 
     # Customize the major grid
     plt.grid(which="major", linestyle=":", linewidth="0.5", color="grey")
 
     # Rotate labels in X axis as there are too many
-    plt.setp(ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center")
+    plt.setp(
+        ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center"
+    )
 
     # Change the format of Y axis to 'x%'
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: yfmt.format(y)))
@@ -459,7 +545,12 @@ def plot_line_simple(df, savefile, width=15, height=6, xlabelrotation=0, yfmt="{
     # Shrink current axis by 20% and put a legend to the right of the current axis
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), labelspacing=1, prop={"family": "SimHei"})
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1, 0.5),
+        labelspacing=1,
+        prop={"family": "SimHei"},
+    )
 
     # Save the figure
     save_plot(savefile)
@@ -484,14 +575,23 @@ def plot_barh(
     colors = []
     for item in df.columns.tolist():
         colors.append(COLOR_DICT[item])
-    ax = df.plot(kind="barh", stacked=stacked, figsize=(width, height), alpha=0.8, edgecolor="black", color=colors)
+    ax = df.plot(
+        kind="barh",
+        stacked=stacked,
+        figsize=(width, height),
+        alpha=0.8,
+        edgecolor="black",
+        color=colors,
+    )
     plt.title(title, fontproperties=MYFONT, fontsize=18)
     plt.xlabel(xtitle, fontproperties=MYFONT)
     plt.ylabel(ytitle, fontproperties=MYFONT)
     plt.axvline(x=0, linewidth=2, color="r")
 
     if haslegend == True:
-        plt.legend(loc="center left", bbox_to_anchor=(1.0, 0.5), prop=MYFONT, fontsize=12)
+        plt.legend(
+            loc="center left", bbox_to_anchor=(1.0, 0.5), prop=MYFONT, fontsize=12
+        )
     else:
         plt.legend(prop=MYFONT)
 
@@ -576,7 +676,15 @@ def plot_pie(savefile, sizelist, labellist, focus, title):
             autotext.set_color("r")
 
     # Add title at the center
-    plt.text(0, 0, title, horizontalalignment="center", verticalalignment="center", size=20, fontproperties=MYFONT)
+    plt.text(
+        0,
+        0,
+        title,
+        horizontalalignment="center",
+        verticalalignment="center",
+        size=20,
+        fontproperties=MYFONT,
+    )
 
     # Combine circle part and pie part
     fig = plt.gcf()
@@ -589,8 +697,6 @@ def plot_pie(savefile, sizelist, labellist, focus, title):
 
 def plot_bubble(
     savefile,
-    width,
-    height,
     x,
     y,
     z,
@@ -598,6 +704,9 @@ def plot_bubble(
     title,
     xtitle,
     ytitle,
+    with_reg=False,
+    width=15,
+    height=6,
     z_scale=1,
     xfmt="{:.0%}",
     yfmt="{:+.0%}",
@@ -609,8 +718,9 @@ def plot_bubble(
     xlabel="",
     ylim=None,
     xlim=None,
-    showLabel=True,
-    labelLimit=15,
+    show_label=True,
+    label_limit=15,
+    corr=None,
 ):
 
     fig, ax = plt.subplots()
@@ -625,109 +735,14 @@ def plot_bubble(
     colors = iter(cmap(np.linspace(0, 1, len(y))))
 
     for i in range(len(x)):
-        ax.scatter(x[i], y[i], z[i] * z_scale, color=next(colors), alpha=0.6, edgecolors="black", zorder=5)
-    if yavgline == True:
-        ax.axhline(yavg, linestyle="--", linewidth=0.5, color="grey", zorder=1)
-    if xavgline == True:
-        ax.axvline(xavg, linestyle="--", linewidth=0.5, color="grey", zorder=1)
-    # ax.scatter(x, y, s=z, c=color, alpha=0.6, edgecolors="grey")
-    # ax.grid(which='major', linestyle=':', linewidth='0.5', color='black')
-
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda y, _: xfmt.format(y)))
-    ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: yfmt.format(y)))
-
-    np.random.seed(0)
-    # for i, txt in enumerate(labels):
-    #     text = plt.text(x[i],y[i], txt+"\n"+ '('+ str("{:.1%}".format(x[i])) +', ' + str("{:.1%}".format(y[i])) + ')', ha='center', va='center')
-    if showLabel is True:
-        texts = [
-            plt.text(
-                x[i],
-                y[i],
-                labels[i],
-                ha="center",
-                va="center",
-                multialignment="center",
-                fontproperties=MYFONT,
-                fontsize=10,
-                zorder=10,
-            )
-            for i in range(len(labels[:labelLimit]))
-        ]
-        adjust_text(texts, force_text=0.1, arrowprops=dict(arrowstyle="->", color="black"))
-
-    if yavgline == True:
-        plt.text(
-            ax.get_xlim()[1],
-            yavg,
-            ylabel,
-            ha="left",
-            va="center",
-            color="grey",
-            multialignment="center",
-            fontproperties=MYFONT,
-            fontsize=10,
+        ax.scatter(
+            x.iloc[i],
+            y.iloc[i],
+            z.iloc[i] * z_scale,
+            color=next(colors),
+            alpha=0.6,
+            edgecolors="black",
         )
-    if xavgline == True:
-        plt.text(
-            xavg,
-            ax.get_ylim()[1],
-            xlabel,
-            ha="left",
-            va="top",
-            color="grey",
-            multialignment="center",
-            fontproperties=MYFONT,
-            fontsize=10,
-        )
-
-    plt.title(title, fontproperties=MYFONT)
-    plt.xlabel(xtitle, fontproperties=MYFONT, fontsize=12)
-    plt.ylabel(ytitle, fontproperties=MYFONT, fontsize=12)
-
-    # Save the figure
-    save_plot(savefile)
-
-
-def plot_bubble_with_reg(
-    savefile,
-    width,
-    height,
-    x,
-    y,
-    z,
-    labels,
-    title,
-    xtitle,
-    ytitle,
-    z_scale=1,
-    xfmt="{:.0%}",
-    yfmt="{:+.0%}",
-    yavgline=False,
-    yavg=None,
-    ylabel="",
-    xavgline=False,
-    xavg=None,
-    xlabel="",
-    ylim=None,
-    xlim=None,
-    showLabel=True,
-    labelLimit=15,
-):
-
-    fig, ax = plt.subplots()
-    fig.set_size_inches(width, height)
-
-    if ylim is not None:
-        ax.set_ylim(ymin=ylim[0], ymax=ylim[1])
-    if xlim is not None:
-        ax.set_xlim(xmin=xlim[0], xmax=xlim[1])
-
-    cmap = mpl.colors.ListedColormap(np.random.rand(256, 3))
-    colors = iter(cmap(np.linspace(0, 1, len(y))))
-
-    for i in range(len(x)):
-        ax.scatter(x[i], y[i], z[i] * z_scale, color=next(colors), alpha=0.6, edgecolors="black")
     if yavgline == True:
         ax.axhline(yavg, linestyle="--", linewidth=1, color="r")
     if xavgline == True:
@@ -741,11 +756,11 @@ def plot_bubble_with_reg(
     np.random.seed(0)
     # for i, txt in enumerate(labels):
     #     text = plt.text(x[i],y[i], txt+"\n"+ '('+ str("{:.1%}".format(x[i])) +', ' + str("{:.1%}".format(y[i])) + ')', ha='center', va='center')
-    if showLabel is True:
+    if show_label is True:
         texts = [
             plt.text(
-                x[i],
-                y[i],
+                x.iloc[i],
+                y.iloc[i],
                 labels[i],
                 ha="center",
                 va="center",
@@ -753,9 +768,11 @@ def plot_bubble_with_reg(
                 fontproperties=MYFONT,
                 fontsize=10,
             )
-            for i in range(len(labels[:labelLimit]))
+            for i in range(len(labels[:label_limit]))
         ]
-        adjust_text(texts, force_text=0.1, arrowprops=dict(arrowstyle="->", color="black"))
+        adjust_text(
+            texts, force_text=0.1, arrowprops=dict(arrowstyle="->", color="black")
+        )
 
     if yavgline == True:
         plt.text(
@@ -782,36 +799,63 @@ def plot_bubble_with_reg(
             fontsize=10,
         )
 
-    n = y.size  # 观察例数
-    if n > 2:  # 数据点必须大于cov矩阵的scale
-        p, cov = np.polyfit(x, y, 1, cov=True)  # 简单线性回归返回parameter和covariance
-        poly1d_fn = np.poly1d(p)  # 拟合方程
-        y_model = poly1d_fn(x)  # 拟合的y值
-        m = p.size  # 参数个数
+    if with_reg:
+        n = y.size  # 观察例数
+        if n > 2:  # 数据点必须大于cov矩阵的scale
+            p, cov = np.polyfit(x, y, 1, cov=True)  # 简单线性回归返回parameter和covariance
+            poly1d_fn = np.poly1d(p)  # 拟合方程
+            y_model = poly1d_fn(x)  # 拟合的y值
+            m = p.size  # 参数个数
 
-        dof = n - m  # degrees of freedom
-        t = stats.t.ppf(0.975, dof)  # 显著性检验t值
+            dof = n - m  # degrees of freedom
+            t = stats.t.ppf(0.975, dof)  # 显著性检验t值
 
-        # 拟合结果绘图
-        ax.plot(x, y_model, "-", color="0.1", linewidth=1.5, alpha=0.5, label="Fit")
+            # 拟合结果绘图
+            ax.plot(x, y_model, "-", color="0.1", linewidth=1.5, alpha=0.5, label="Fit")
 
-        # 误差估计
-        resid = y - y_model  # 残差
-        s_err = np.sqrt(np.sum(resid ** 2) / dof)  # 标准误差
+            # 误差估计
+            resid = y - y_model  # 残差
+            s_err = np.sqrt(np.sum(resid ** 2) / dof)  # 标准误差
 
-        # 拟合CI和PI
-        x2 = np.linspace(np.min(x), np.max(x), 100)
-        y2 = poly1d_fn(x2)
+            # 拟合CI和PI
+            x2 = np.linspace(np.min(x), np.max(x), 100)
+            y2 = poly1d_fn(x2)
 
-        # CI计算和绘图
-        ci = t * s_err * np.sqrt(1 / n + (x2 - np.mean(x)) ** 2 / np.sum((x - np.mean(x)) ** 2))
-        ax.fill_between(x2, y2 + ci, y2 - ci, color="#b9cfe7", edgecolor="", alpha=0.5)
+            # CI计算和绘图
+            ci = (
+                t
+                * s_err
+                * np.sqrt(
+                    1 / n + (x2 - np.mean(x)) ** 2 / np.sum((x - np.mean(x)) ** 2)
+                )
+            )
+            ax.fill_between(x2, y2 + ci, y2 - ci, color="#b9cfe7", alpha=0.5)
 
-        # Pi计算和绘图
-        pi = t * s_err * np.sqrt(1 + 1 / n + (x2 - np.mean(x)) ** 2 / np.sum((x - np.mean(x)) ** 2))
-        ax.fill_between(x2, y2 + pi, y2 - pi, color="None", linestyle="--")
-        ax.plot(x2, y2 - pi, "--", color="0.5", label="95% Prediction Limits")
-        ax.plot(x2, y2 + pi, "--", color="0.5")
+            # Pi计算和绘图
+            pi = (
+                t
+                * s_err
+                * np.sqrt(
+                    1 + 1 / n + (x2 - np.mean(x)) ** 2 / np.sum((x - np.mean(x)) ** 2)
+                )
+            )
+            ax.fill_between(x2, y2 + pi, y2 - pi, color="None", linestyle="--")
+            ax.plot(x2, y2 - pi, "--", color="0.5", label="95% Prediction Limits")
+            ax.plot(x2, y2 + pi, "--", color="0.5")
+
+    # Add corr
+    if corr is not None:
+        plt.text(
+            0.02,
+            0.96,
+            "x,y相关系数：" + str(corr),
+            horizontalalignment="left",
+            verticalalignment="center",
+            transform=ax.transAxes,
+            fontproperties=MYFONT,
+            fontsize=10,
+        )
+
 
     plt.title(title, fontproperties=MYFONT)
     plt.xlabel(xtitle, fontproperties=MYFONT, fontsize=12)
@@ -866,7 +910,9 @@ def plot_dual_line(
         )
 
         endpoint = -1
-        while np.isnan(df1.values[endpoint][count]) or df1.values[endpoint][count] == float("inf"):
+        while np.isnan(df1.values[endpoint][count]) or df1.values[endpoint][
+            count
+        ] == float("inf"):
             endpoint = endpoint - 1
             if abs(endpoint) == len(df1.index):
                 break
@@ -883,7 +929,9 @@ def plot_dual_line(
                 )
 
         startpoint = 0
-        while np.isnan(df1.values[startpoint][count]) or df1.values[startpoint][count] == float("inf"):
+        while np.isnan(df1.values[startpoint][count]) or df1.values[startpoint][
+            count
+        ] == float("inf"):
             startpoint = startpoint + 1
             if startpoint == len(df1.index):
                 break
@@ -905,7 +953,9 @@ def plot_dual_line(
     plt.grid(which="major", linestyle=":", linewidth="0.5", color="grey")
 
     # Rotate labels in X axis as there are too many
-    plt.setp(ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center")
+    plt.setp(
+        ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center"
+    )
 
     # Change the format of Y axis to 'x%'
     ax.yaxis.set_major_formatter(plt.NullFormatter())
@@ -935,7 +985,9 @@ def plot_dual_line(
         )
 
         endpoint = -1
-        while np.isnan(df2.values[endpoint][count]) or df2.values[endpoint][count] == float("inf"):
+        while np.isnan(df2.values[endpoint][count]) or df2.values[endpoint][
+            count
+        ] == float("inf"):
             endpoint = endpoint - 1
             if abs(endpoint) == len(df2.index):
                 break
@@ -952,7 +1004,9 @@ def plot_dual_line(
                 )
 
         startpoint = 0
-        while np.isnan(df2.values[startpoint][count]) or df2.values[startpoint][count] == float("inf"):
+        while np.isnan(df2.values[startpoint][count]) or df2.values[startpoint][
+            count
+        ] == float("inf"):
             startpoint = startpoint + 1
             if startpoint == len(df2.index):
                 break
@@ -974,7 +1028,9 @@ def plot_dual_line(
     plt.grid(which="major", linestyle=":", linewidth="0.5", color="grey")
 
     # Rotate labels in X axis as there are too many
-    plt.setp(ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center")
+    plt.setp(
+        ax.get_xticklabels(), rotation=xlabelrotation, horizontalalignment="center"
+    )
 
     # Change the format of Y axis to 'x%'
     ax.yaxis.set_major_formatter(plt.NullFormatter())
@@ -987,7 +1043,12 @@ def plot_dual_line(
     # Shrink current axis by 20% and put a legend to the right of the current axis
     # box = ax.get_position()
     # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc="center left", bbox_to_anchor=(1.1, 0.5), labelspacing=1, prop={"family": "SimHei"})
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.1, 0.5),
+        labelspacing=1,
+        prop={"family": "SimHei"},
+    )
 
     # ymax = ax.get_ylim()[1]
     # if ymax > 3:
@@ -1013,7 +1074,13 @@ def plot_barline(
     ytitle=None,
 ):
 
-    ax = df_bar.plot(kind="bar", stacked=stacked, figsize=(width, height), alpha=0.8, edgecolor="black")
+    ax = df_bar.plot(
+        kind="bar",
+        stacked=stacked,
+        figsize=(width, height),
+        alpha=0.8,
+        edgecolor="black",
+    )
 
     plt.title(title, fontproperties=MYFONT, fontsize=18)
     plt.xlabel(xtitle, fontproperties=MYFONT)
@@ -1089,7 +1156,9 @@ def plot_barline(
         # 合并图例
         bars, labels = ax.get_legend_handles_labels()
         lines, labels2 = ax2.get_legend_handles_labels()
-        plt.legend(bars + lines, labels + labels2, loc="center left", bbox_to_anchor=(1.0, 0.5))
+        plt.legend(
+            bars + lines, labels + labels2, loc="center left", bbox_to_anchor=(1.0, 0.5)
+        )
         ax.get_legend().remove()
 
     # Save the figure
@@ -1115,7 +1184,14 @@ def plot_twinbar(
     # gs.update(wspace=0, hspace=0)  # grid各部分之间紧挨，space设为0.
 
     ax1 = plt.subplot(gs[0])
-    df1.plot(kind="bar", ax=ax1, stacked=df1_stacked, figsize=(width, height), alpha=0.8, edgecolor="black")
+    df1.plot(
+        kind="bar",
+        ax=ax1,
+        stacked=df1_stacked,
+        figsize=(width, height),
+        alpha=0.8,
+        edgecolor="black",
+    )
 
     # # Add value label
     # labels = []
@@ -1143,7 +1219,14 @@ def plot_twinbar(
     #         )
 
     ax2 = plt.subplot(gs[1])
-    df2.plot(kind="bar", ax=ax2, stacked=df2_stacked, figsize=(width, height), alpha=0.8, edgecolor="black")
+    df2.plot(
+        kind="bar",
+        ax=ax2,
+        stacked=df2_stacked,
+        figsize=(width, height),
+        alpha=0.8,
+        edgecolor="black",
+    )
 
     bars, labels = ax1.get_legend_handles_labels()
     plt.legend(bars, labels, loc="center left", bbox_to_anchor=(1.0, 0.5))
@@ -1159,9 +1242,13 @@ def refine_outlier(df, column, upper_threshold):
     for i, idx in enumerate(index_list):
         if df.loc[idx, column] > upper_threshold:
             if column == "Product_n":
-                index_list[i] = idx + " 商品数：" "{:.1f}".format((df.loc[idx, column])) + "!!!"
+                index_list[i] = (
+                    idx + " 商品数：" "{:.1f}".format((df.loc[idx, column])) + "!!!"
+                )
             elif column == "GR":
-                index_list[i] = idx + " 增长率：" "{:.0%}".format((df.loc[idx, column])) + "!!!"
+                index_list[i] = (
+                    idx + " 增长率：" "{:.0%}".format((df.loc[idx, column])) + "!!!"
+                )
     df.index = index_list
     df.loc[df[column] > upper_threshold, column] = upper_threshold
 

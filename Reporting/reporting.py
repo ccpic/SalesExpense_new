@@ -46,7 +46,7 @@ D_SORTER = {
     "医院级别": ["D" + str(i + 1) for i in range(9, -1, -1)]+["旗舰社区", "普通社区"],
     "职称": ["院长/副院长", "主任医师", "副主任医师", "主治医师", "住院医师", "其他"],
     "IQVIA医院潜力分位": ["D" + str(i + 1) for i in range(9, -1, -1)],
-    "月份": [202105, 202106],
+    "月份": [202106, 202107],
 }
 
 D_RENAME = {
@@ -501,8 +501,8 @@ class Clientfile(pd.DataFrame):
         z_scale=1.00,
         xlim=None,
         ylim=None,
-        showLabel=True,
-        labelLimit=15,
+        show_label=True,
+        label_limit=15,
         width=15,
         height=6,
         dimension="total",
@@ -545,8 +545,8 @@ class Clientfile(pd.DataFrame):
             yfmt="{:,.0f}",
             xlim=xlim,
             ylim=ylim,
-            showLabel=showLabel,
-            labelLimit=labelLimit,
+            show_label=show_label,
+            label_limit=label_limit,
             xavgline=True,
             xavg=xavg,
             xlabel=xlabel,
@@ -559,7 +559,7 @@ class Clientfile(pd.DataFrame):
 
     # 绘制医院潜力和客户档案潜力散点图
     def plot_bubble_potential_pair(
-        self, filter=None, z_scale=1.00, xlim=None, ylim=None, showLabel=False, labelLimit=30, width=15, height=6,
+        self, filter=None, z_scale=1.00, xlim=None, ylim=None, show_label=False, label_limit=30, width=15, height=6,
     ):
         df = self.get_potential_pair(filter=filter)
         x = np.log(df.loc[:, "IQVIA医院潜力"])
@@ -589,8 +589,8 @@ class Clientfile(pd.DataFrame):
             yfmt="{:,.0f}",
             xlim=xlim,
             ylim=ylim,
-            showLabel=showLabel,
-            labelLimit=labelLimit,
+            show_label=show_label,
+            label_limit=label_limit,
         )
 
         return img_path
