@@ -54,10 +54,10 @@ def add_img_slide(title=None, layout_style=0, *args):
 
 if __name__ == "__main__":
     year = 2021
-    month = 7
+    month = 10
     # 准备数据
-    df_pre = pd.read_excel("./Reporting/20210701110520.xlsx")  # 作为对比的上个时期的档案数据
-    df_post = pd.read_excel("./Reporting/20210802112700.xlsx")  # 作为对比的上个时期的档案数据
+    df_pre = pd.read_excel("./Reporting/202109.xlsx")  # 作为对比的上个时期的档案数据
+    df_post = pd.read_excel("./Reporting/202110.xlsx")  # 作为对比的上个时期的档案数据
     # df_decile = pd.read_excel("decile.xlsx")  # 医院Decile数据文件，用于Decile相关分析的匹配
 
     df_pre["月份"] = year * 100 + month - 1
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     df_total = cleandata(df_total)
 
     # 分南北中国
-    bu = "北中国"
+    bu = "南中国"
     df_pre = df_total[
         (df_total["南北中国"] == bu) & (df_total["月份"] == year * 100 + month - 1)
     ]
@@ -376,8 +376,8 @@ if __name__ == "__main__":
         )
 
     # Page25-27 各地区经理档案数量相关指标汇总
-    # range_list = ((0, 18), (18, 36), (36, 55))
-    range_list = ((0, 20), (20, 40), (40, 61))
+    range_list = ((0, 18), (18, 36), (36, 55))
+    # range_list = ((0, 20), (20, 40), (40, 61))
     for i, r in enumerate(range_list):
         add_img_slide(
             "各地区经理档案数量相关指标汇总 - %s" % str(i + 1),
