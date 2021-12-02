@@ -2,7 +2,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import *
-from sheets.models import Staff
+# from sheets.models import Staff
 from sheets.views import build_formatters_by_col
 from django.http import HttpResponse, JsonResponse
 import xlrd
@@ -28,6 +28,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core import serializers
 import scipy.stats as stats
 from django.db.models import Max
+from .views_auth import build_staff_tree
 
 try:
     from io import BytesIO as IO  # for modern python
@@ -150,6 +151,8 @@ COL_REINDEX = [
     "月累计相关病人数",
     "潜力级别",
 ]
+
+
 
 
 @login_required()
@@ -524,8 +527,10 @@ def dsm_auth(user, dsm_list):
     if user.is_staff:
         return True, None
     else:
-        staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
-        staff_list = [i.name for i in staffs]
+        staff_tree = build_staff_tree()
+        print(user, staff_tree)
+        staff = staff_tree.find_staff("name", user.username)
+        staff_list = staff.get_descendants_list(attr="name")
         return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
@@ -572,9 +577,13 @@ def get_clients(
 
         clients = clientset.filter(or_condiction)
     else:
-        staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
-        staff_list = [i.name for i in staffs]
+        # staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
+        # staff_list = [i.name for i in staffs]
 
+        staff_tree = build_staff_tree()
+        staff = staff_tree.find_staff("name", user.username)
+        staff_list = staff.get_descendants_list(attr="name")
+        
         clients = (
             clientset.filter(rd__in=staff_list)
             | clientset.filter(rm__in=staff_list)

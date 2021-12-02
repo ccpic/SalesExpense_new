@@ -92,7 +92,15 @@ DATABASES = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": "D:\data.db",
         "OPTIONS": {"timeout": 20,},
-    }
+    },
+    # "user": {
+    #     "NAME": "slthr",
+    #     "ENGINE": "sql_server.pyodbc",
+    #     "HOST": "192.168.10.121",
+    #     "USER": "dsmsys",
+    #     "PASSWORD": "dsm@2021",
+    #     "OPTIONS": {"driver": "ODBC Driver 17 for SQL Server",},
+    # }
 }
 
 
