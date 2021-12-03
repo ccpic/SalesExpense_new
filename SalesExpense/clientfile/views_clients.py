@@ -2,6 +2,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from .models import *
+
 # from sheets.models import Staff
 from sheets.views import build_formatters_by_col
 from django.http import HttpResponse, JsonResponse
@@ -28,7 +29,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core import serializers
 import scipy.stats as stats
 from django.db.models import Max
-from .views_auth import build_staff_tree
+from .auth import build_staff_tree
 
 try:
     from io import BytesIO as IO  # for modern python
@@ -38,7 +39,7 @@ except ImportError:
 pd.set_option("display.max_columns", 5000)
 pd.set_option("display.width", 5000)
 
-
+UPLOAD_AUTH_POS = ["地区经理", "高级地区经理"]
 D_SEARCH_FIELD = {
     "省/自治区/直辖市": "province",
     "南北中国": "bu",
@@ -51,7 +52,7 @@ D_SEARCH_FIELD = {
     "客户姓名": "name",
     "所在科室": "dept",
     "职称": "title",
-    #"备注": "note",
+    # "备注": "note",
 }
 
 D_SELECT = {
@@ -153,13 +154,13 @@ COL_REINDEX = [
 ]
 
 
-
-
 @login_required()
 def clients(request):
+    view_auth, upload_auth = get_user_auth(request.user.username)  # 权限范围
+
     if request.method == "GET":
-        record_n = get_clients(request.user).count
-        context = {"record_n": record_n}
+        record_n = get_clients(view_auth).count
+        context = {"record_n": record_n, "upload_auth": upload_auth}
         return render(request, "clientfile/clients.html", context)
     else:
         # 查询常数设置
@@ -203,25 +204,35 @@ def clients(request):
         context = get_context_from_form(request)
 
         # 根据用户权限，前端参数，搜索关键字返回client objects
-        clients = get_clients(request.user, context, search_key)
+        clients = get_clients(view_auth, context, search_key)
 
         # 排序
         result_length = clients.count()
         if sort_column < 43:
             if sort_order == "asc":
-                clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]))
+                clients = sorted(
+                    clients, key=lambda a: getattr(a, ORDER_DICT[sort_column])
+                )
             elif sort_order == "desc":
-                clients = sorted(clients, key=lambda a: getattr(a, ORDER_DICT[sort_column]), reverse=True)
+                clients = sorted(
+                    clients,
+                    key=lambda a: getattr(a, ORDER_DICT[sort_column]),
+                    reverse=True,
+                )
         elif sort_column == 14:
             if sort_order == "asc":
                 clients = sorted(clients, key=lambda a: a.monthly_patients())
             elif sort_order == "desc":
-                clients = sorted(clients, key=lambda a: a.monthly_patients(), reverse=True)
+                clients = sorted(
+                    clients, key=lambda a: a.monthly_patients(), reverse=True
+                )
         elif sort_column == 15:
             if sort_order == "asc":
                 clients = sorted(clients, key=lambda a: a.potential_level())
             elif sort_order == "desc":
-                clients = sorted(clients, key=lambda a: a.potential_level(), reverse=True)
+                clients = sorted(
+                    clients, key=lambda a: a.potential_level(), reverse=True
+                )
 
         # 对list进行分页
         paginator = Paginator(clients, length)
@@ -253,7 +264,8 @@ def clients(request):
                 # "dual_call": item.dual_call,
                 "hp_level": item.hp_level,
                 # "hp_access": item.hp_access,
-                "name": '<a href="/clientfile/clients/%s">%s</a>' % (item.pk, item.name),
+                "name": '<a href="/clientfile/clients/%s">%s</a>'
+                % (item.pk, item.name),
                 "dept": item.dept,
                 "title": item.title,
                 "consulting_times": item.consulting_times,
@@ -286,17 +298,27 @@ def client_detail(request, id):
     pct_rank_same_hosp = get_pct_rank(client_monthly_patients, clients_same_hosp)
 
     # 同医院同科室潜力分位
-    clients_same_hosp_dept = Client.objects.filter(hospital=client.hospital, dept=client.dept)
-    pct_rank_same_hosp_dept = get_pct_rank(client_monthly_patients, clients_same_hosp_dept)
+    clients_same_hosp_dept = Client.objects.filter(
+        hospital=client.hospital, dept=client.dept
+    )
+    pct_rank_same_hosp_dept = get_pct_rank(
+        client_monthly_patients, clients_same_hosp_dept
+    )
     clients_same_hosp_dept = clients_same_hosp_dept.exclude(pk=id)
 
     # 同医院同科室同职称潜力分位
-    clients_same_hosp_dept_title = Client.objects.filter(hospital=client.hospital, dept=client.dept, title=client.title)
-    pct_rank_same_hosp_dept_title = get_pct_rank(client_monthly_patients, clients_same_hosp_dept_title)
+    clients_same_hosp_dept_title = Client.objects.filter(
+        hospital=client.hospital, dept=client.dept, title=client.title
+    )
+    pct_rank_same_hosp_dept_title = get_pct_rank(
+        client_monthly_patients, clients_same_hosp_dept_title
+    )
 
     # 同省份潜力分位
     clients_same_province = Client.objects.filter(province=client.province)
-    pct_rank_same_province = get_pct_rank(client_monthly_patients, clients_same_province)
+    pct_rank_same_province = get_pct_rank(
+        client_monthly_patients, clients_same_province
+    )
 
     # 同bu潜力分位
     clients_same_bu = Client.objects.filter(bu=client.bu)
@@ -324,7 +346,9 @@ def client_detail(request, id):
     related_ids = [
         client.id
         for client in clients_same_dsm
-        if client_monthly_patients_lb < client.monthly_patients() < client_monthly_patients_ub
+        if client_monthly_patients_lb
+        < client.monthly_patients()
+        < client_monthly_patients_ub
     ]
     clients_related = Client.objects.filter(id__in=related_ids)
     clients_related = clients_related.exclude(pk=id)
@@ -351,7 +375,7 @@ def client_detail(request, id):
 
 @login_required()
 def export_clients(request):
-    df = get_df_clients(request.user)
+    df = get_df_clients(request.user.username)
     excel_file = IO()
 
     xlwriter = pd.ExcelWriter(excel_file, engine="xlsxwriter")
@@ -365,7 +389,8 @@ def export_clients(request):
 
     # 设置浏览器mime类型
     response = HttpResponse(
-        excel_file.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        excel_file.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
     # 设置文件名
@@ -398,7 +423,9 @@ def import_excel(request):
                     context["msg"] = "缺少以下必须字段，请检查" + str(column_diff)
                     return JsonResponse(context)
                 else:
-                    if dsm_auth(request.user, df["地区经理"].unique())[0] is False:  # 权限检查，只能上传自己/下属dsm的数据
+                    if (
+                        dsm_auth(request.user, df["地区经理"].unique())[0] is False
+                    ):  # 权限检查，只能上传自己/下属dsm的数据
                         context["msg"] = "权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据" + str(
                             dsm_auth(request.user, df[COL[3]].unique())[1]
                         )
@@ -413,11 +440,15 @@ def import_excel(request):
                             try:
                                 import_record(df)
                             except IntegrityError as e:
-                                context["msg"] = "文件中有记录(代表-医院-科室-客户姓名）与其他账号上传数据重复，请联系管理员解决"
+                                context[
+                                    "msg"
+                                ] = "文件中有记录(代表-医院-科室-客户姓名）与其他账号上传数据重复，请联系管理员解决"
                                 return JsonResponse(context)
                             else:
                                 context["code"] = 1
-                                context["msg"] = "上传成功，可以尝试" + '<a href="analysis">分析现有数据</a>'
+                                context["msg"] = (
+                                    "上传成功，可以尝试" + '<a href="analysis">分析现有数据</a>'
+                                )
                                 return JsonResponse(context)
 
 
@@ -435,9 +466,30 @@ def validate(df):
         [
             Column("南北中国", [InListValidation(list_bu)]),
             Column("区域", [InListValidation(list_rd)]),
-            Column("大区", [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
-            Column("地区经理", [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
-            Column("负责代表", [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+            Column(
+                "大区",
+                [
+                    LeadingWhitespaceValidation(),
+                    TrailingWhitespaceValidation(),
+                    NullValidation,
+                ],
+            ),
+            Column(
+                "地区经理",
+                [
+                    LeadingWhitespaceValidation(),
+                    TrailingWhitespaceValidation(),
+                    NullValidation,
+                ],
+            ),
+            Column(
+                "负责代表",
+                [
+                    LeadingWhitespaceValidation(),
+                    TrailingWhitespaceValidation(),
+                    NullValidation,
+                ],
+            ),
             Column(
                 "医院编码",
                 [
@@ -447,17 +499,42 @@ def validate(df):
                     MatchesPatternValidation(r"^[H]{1}(\d){9}$"),
                 ],
             ),
-            Column("医院全称", [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), NullValidation]),
+            Column(
+                "医院全称",
+                [
+                    LeadingWhitespaceValidation(),
+                    TrailingWhitespaceValidation(),
+                    NullValidation,
+                ],
+            ),
             Column("省/自治区/直辖市", [InListValidation(list_province)]),
             Column("是否双call", [InListValidation(["是", "否"])]),
             Column("医院级别", [InListValidation(list_hplevel)]),
             Column("开户进展", [InListValidation(["已开户", "未开户"])]),
-            Column("客户姓名", [LeadingWhitespaceValidation(), TrailingWhitespaceValidation(), IsDistinctValidation()]),
+            Column(
+                "客户姓名",
+                [
+                    LeadingWhitespaceValidation(),
+                    TrailingWhitespaceValidation(),
+                    IsDistinctValidation(),
+                ],
+            ),
             Column("所在科室", [InListValidation(list_dept)]),
             Column("职称", [InListValidation(list_title)]),
             Column("月出诊次数（半天计）", [CanConvertValidation(int), InRangeValidation(0, 63)]),
-            Column("每半天\n门诊量", [CanConvertValidation(int), InRangeValidation(0,)]),
-            Column("相关病人\n比例(%)\n建议比例：40%-80%", [CanConvertValidation(int), InRangeValidation(0, 101)]),
+            Column(
+                "每半天\n门诊量",
+                [
+                    CanConvertValidation(int),
+                    InRangeValidation(
+                        0,
+                    ),
+                ],
+            ),
+            Column(
+                "相关病人\n比例(%)\n建议比例：40%-80%",
+                [CanConvertValidation(int), InRangeValidation(0, 101)],
+            ),
             Column("备注"),
         ]
     )
@@ -483,7 +560,7 @@ def validate(df):
     d_error = {**d_error, **check_inconsist(df, "医院全称", "医院级别", "left")}
     d_error = {**d_error, **check_inconsist(df, "医院全称", "开户进展", "left")}
 
-    d_error = {**d_error, **check_hplevel_with_dept(df)} # 检查医院级别和所在科室是否出现矛盾
+    d_error = {**d_error, **check_hplevel_with_dept(df)}  # 检查医院级别和所在科室是否出现矛盾
     return d_error
 
 
@@ -492,50 +569,67 @@ def check_inconsist(df, col1, col2, side="left"):
     pivot = df.groupby([col1, col2]).size().reset_index().rename(columns={0: "记录数"})
     if side == "left":
         if len(pivot[col1]) - len(pivot[col1].drop_duplicates()) > 0:
-            d_error["相同" + col1 + "有不同" + col2] = pivot[pivot.duplicated(col1, keep=False)].to_html(
-                index=False, classes="ui red small table"
-            )
+            d_error["相同" + col1 + "有不同" + col2] = pivot[
+                pivot.duplicated(col1, keep=False)
+            ].to_html(index=False, classes="ui red small table")
     elif side == "right":
         if len(pivot[col2]) - len(pivot[col2].drop_duplicates()) > 0:
-            d_error["相同" + col2 + "有不同" + col1] = pivot[pivot.duplicated(col2, keep=False)].to_html(
-                index=False, classes="ui red small table"
-            )
+            d_error["相同" + col2 + "有不同" + col1] = pivot[
+                pivot.duplicated(col2, keep=False)
+            ].to_html(index=False, classes="ui red small table")
     elif side == "both":
         if len(pivot[col1]) - len(pivot[col1].drop_duplicates()) > 0:
-            d_error["相同" + col1 + "有不同" + col2] = pivot[pivot.duplicated(col1, keep=False)].to_html(
-                index=False, classes="ui red small table"
-            )
+            d_error["相同" + col1 + "有不同" + col2] = pivot[
+                pivot.duplicated(col1, keep=False)
+            ].to_html(index=False, classes="ui red small table")
         if len(pivot[col2]) - len(pivot[col2].drop_duplicates()) > 0:
-            d_error["相同" + col2 + "有不同" + col1] = pivot[pivot.duplicated(col2, keep=False)].to_html(
-                index=False, classes="ui red small table"
-            )
+            d_error["相同" + col2 + "有不同" + col1] = pivot[
+                pivot.duplicated(col2, keep=False)
+            ].to_html(index=False, classes="ui red small table")
     return d_error
 
 
 def check_hplevel_with_dept(df):
     d_error = {}
-    pivot = df.groupby(['医院级别', '所在科室']).size().reset_index().rename(columns={0: "记录数"})
-    mask = (pivot['医院级别'].str.count('社区') + pivot['所在科室'].str.count('社区')) == 1
+    pivot = df.groupby(["医院级别", "所在科室"]).size().reset_index().rename(columns={0: "记录数"})
+    mask = (pivot["医院级别"].str.count("社区") + pivot["所在科室"].str.count("社区")) == 1
     if len(pivot.loc[mask, :]) > 0:
         d_error["医院级别和所在科室出现矛盾"] = pivot.loc[mask, :].to_html(
-            index=False, classes="ui red small table")
+            index=False, classes="ui red small table"
+        )
 
     return d_error
 
 
-def dsm_auth(user, dsm_list):
-    if user.is_staff:
-        return True, None
-    else:
-        staff_tree = build_staff_tree()
-        print(user, staff_tree)
-        staff = staff_tree.find_staff("name", user.username)
+def get_user_auth(username: str) -> tuple:
+    staff_tree = build_staff_tree() #组织架构
+    staff = staff_tree.find_staff("name", username)
+    if staff is not None: # 如果登录用户在组织架构内
         staff_list = staff.get_descendants_list(attr="name")
-        return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
+        if staff.position in UPLOAD_AUTH_POS: # 如果登录用户的岗位有上传权限
+            upload_auth = True
+        else:
+            upload_auth = False
+    else:
+        staff_list = [username]
+        upload_auth = True
+        
+    return staff_list, upload_auth
+
+
+def dsm_auth(user, dsm_list):
+    staff_list = get_user_auth(user.username)[0]
+    return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
 
 
 def get_clients(
-    user, context=None, search_key=None, is_deleted=False, group_id=None, pub_date_gte=None, name_and_hosp=None
+    user_auth,
+    context=None,
+    search_key=None,
+    is_deleted=False,
+    group_id=None,
+    pub_date_gte=None,
+    name_and_hosp=None,
 ):
     or_condiction = Q()
 
@@ -555,7 +649,9 @@ def get_clients(
         keywords = name_and_hosp.split()
         print(len(keywords))
         if len(keywords) == 1:
-            or_condiction.add(Q(name__contains=keywords[0]) | Q(hospital__contains=keywords[0]), Q.AND)
+            or_condiction.add(
+                Q(name__contains=keywords[0]) | Q(hospital__contains=keywords[0]), Q.AND
+            )
         elif len(keywords) == 2:
             or_condiction.add(Q(name__contains=keywords[0]), Q.AND)
             or_condiction.add(Q(hospital__contains=keywords[1]), Q.AND)
@@ -573,28 +669,26 @@ def get_clients(
         clientset = Client.objects.all_with_deleted()
 
     # 根据用户权限筛选
-    if user.is_staff:
+    # if user.is_staff:
+    #     clients = clientset.filter(or_condiction)
+    # else:
+    # staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
+    # staff_list = [i.name for i in staffs]
 
-        clients = clientset.filter(or_condiction)
-    else:
-        # staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
-        # staff_list = [i.name for i in staffs]
+    clients = (
+        clientset.filter(rd__in=user_auth)
+        | clientset.filter(rm__in=user_auth)
+        | clientset.filter(dsm__in=user_auth)
+    )
 
-        staff_tree = build_staff_tree()
-        staff = staff_tree.find_staff("name", user.username)
-        staff_list = staff.get_descendants_list(attr="name")
-        
-        clients = (
-            clientset.filter(rd__in=staff_list)
-            | clientset.filter(rm__in=staff_list)
-            | clientset.filter(dsm__in=staff_list)
-        )
-        clients = clients.filter(or_condiction)
+    clients = clients.filter(or_condiction)
+
     return clients
 
 
 def client_search(response, kw):
-    clients_obj = get_clients(user=response.user, name_and_hosp=kw)
+    user_auth = get_user_auth(response.user.username)
+    clients_obj = get_clients(user_auth=user_auth, name_and_hosp=kw)
     print("search")
     try:
         clients = serializers.serialize("json", clients_obj, ensure_ascii=False)
@@ -608,13 +702,23 @@ def client_search(response, kw):
             "errMsg": e,
             "code": 0,
         }
-    return HttpResponse(json.dumps(res, ensure_ascii=False), content_type="application/json charset=utf-8")
+    return HttpResponse(
+        json.dumps(res, ensure_ascii=False),
+        content_type="application/json charset=utf-8",
+    )
 
 
-def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_id=None, pub_date_gte=None):
+def get_df_clients(
+    user_auth,
+    context=None,
+    search_key=None,
+    is_deleted=False,
+    group_id=None,
+    pub_date_gte=None,
+):
 
     clients = get_clients(
-        user=user,
+        user_auth=user_auth,
         context=context,
         search_key=search_key,
         is_deleted=is_deleted,
@@ -651,7 +755,10 @@ def get_df_clients(user, context=None, search_key=None, is_deleted=False, group_
         df_new["note"].fillna("", inplace=True)
         df_new["target_prop"] = df_new["target_prop"] / 100
         df_new["monthly_target_patients"] = round(
-            df_new["consulting_times"] * df_new["patients_half_day"] * df_new["target_prop"], 0
+            df_new["consulting_times"]
+            * df_new["patients_half_day"]
+            * df_new["target_prop"],
+            0,
         )
         df_new["potential_level"] = df_new["monthly_target_patients"].apply(
             lambda x: "L" if x < 80 else ("M" if x < 200 else "H")

@@ -18,7 +18,7 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:60px">
     <div class="ui hidden divider"></div>
-    {% if request.user|has_group:"地区经理" %}
+    {% if upload_auth %}
         <div class="ui container">
             <h2 class="ui blue dividing header">导入Excel</h2>
             <a href="{% static 'media/客户档案模板.xlsx' %}">下载客户档案模板</a>
