@@ -44,50 +44,50 @@ class Staff(NodeMixin):  # Add Node feature
             return descendants
 
 
-def get_df_hr() -> pd.DataFrame:
-    with open('../env.json', 'r') as env:
-        ENV_CONST = json.loads(env)
+# def get_df_hr() -> pd.DataFrame: # pandas方便，测试用
+#     with open('../env.json', 'r') as env:
+#         ENV_CONST = json.loads(env)
         
-    VIEW_TABLE = ENV_CONST["view_table"]
+#     VIEW_TABLE = ENV_CONST["view_table"]
 
-    conn = pyodbc.connect(
-        driver="{SQL Server}",
-        server=ENV_CONST["server"],
-        database=ENV_CONST["database"],
-        uid=ENV_CONST["uid"],
-        pwd=ENV_CONST["pwd"],
-        unicode_results=True,
-        charset="utf8",
-    )
-    cursor = conn.cursor()
+#     conn = pyodbc.connect(
+#         driver="{SQL Server}",
+#         server=ENV_CONST["server"],
+#         database=ENV_CONST["database"],
+#         uid=ENV_CONST["uid"],
+#         pwd=ENV_CONST["pwd"],
+#         unicode_results=True,
+#         charset="utf8",
+#     )
+#     cursor = conn.cursor()
 
-    sql = "SELECT * FROM %s WHERE [二级部门] in (N'南中国', N'北中国')" % VIEW_TABLE
-    print(sql)
-    cursor.execute(sql)
+#     sql = "SELECT * FROM %s WHERE [二级部门] in (N'南中国', N'北中国')" % VIEW_TABLE
+#     print(sql)
+#     cursor.execute(sql)
 
-    columns = [column[0] for column in cursor.description]
-    df = pd.DataFrame(columns=columns)
+#     columns = [column[0] for column in cursor.description]
+#     df = pd.DataFrame(columns=columns)
 
-    fetch_lines_per_block = 2000
-    i = 0
-    while True:
-        rows = cursor.fetchmany(fetch_lines_per_block)
-        if len(rows) == 0:
-            break
-        else:
-            rd = [dict(zip(columns, r)) for r in rows]
-            df = df.append(rd, ignore_index=True)
-            del rows
-            del rd
-        i += 1
+#     fetch_lines_per_block = 2000
+#     i = 0
+#     while True:
+#         rows = cursor.fetchmany(fetch_lines_per_block)
+#         if len(rows) == 0:
+#             break
+#         else:
+#             rd = [dict(zip(columns, r)) for r in rows]
+#             df = df.append(rd, ignore_index=True)
+#             del rows
+#             del rd
+#         i += 1
 
-    cursor.close()
-    conn.close()
+#     cursor.close()
+#     conn.close()
 
-    return df
+#     return df
 
 
-def build_staff_tree() -> Node:
+def build_staff_tree() -> Node: # 生成组织架构
     all_staffs = get_dict_hr()
 
     with open('./env.json', 'r',encoding='utf-8') as env:
