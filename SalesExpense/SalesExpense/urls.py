@@ -4,8 +4,10 @@ from django.contrib.auth.views import LoginView
 
 
 urlpatterns = [
-    path('sheets/', include('sheets.urls')),
-    path('clientfile/', include('clientfile.urls')),
-    path('admin/', admin.site.urls),
-    path('accounts/', include('django.contrib.auth.urls')),
+    path("sheets/", include("sheets.urls")),
+    path("clientfile/", include("clientfile.urls")),
+    path("admin/", admin.site.urls),
+    path("accounts/", include("django.contrib.auth.urls")),
+    # path('', views.index, name='index'),
+    # path('auth/', include('AuthService.urls')),
 ]

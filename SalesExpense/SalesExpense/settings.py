@@ -29,6 +29,7 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
+    # "django_cas_ng",
     "sheets",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -46,7 +47,12 @@ INSTALLED_APPS = [
     "django_user_agents",
 ]
 
-CACHES = {"default": {"BACKEND": "django.core.cache.backends.memcached.MemcachedCache", "LOCATION": "0.0.0.0:8000",}}
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.MemcachedCache",
+        "LOCATION": "0.0.0.0:8000",
+    }
+}
 USER_AGENTS_CACHE = "default"
 
 
@@ -60,7 +66,19 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django_user_agents.middleware.UserAgentMiddleware",
+    # 'django_cas_ng.middleware.CASMiddleware'
 ]
+
+# AUTHENTICATION_BACKENDS = (
+#     'django.contrib.auth.backends.ModelBackend',
+#     'django_cas_ng.backends.CASBackend',
+# )
+
+# # CAS 的地址
+# CAS_SERVER_URL = 'http://oa.salubris.cn:8088/sso/login'
+# CAS_VERSION = '3'
+# # 存入所有 CAS 服务端返回的 User 数据。
+# CAS_APPLY_ATTRIBUTES_TO_USER = True
 
 ROOT_URLCONF = "SalesExpense.urls"
 
@@ -76,7 +94,9 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
-            "libraries": {"tags": "sheets.templatetags.tags",},
+            "libraries": {
+                "tags": "sheets.templatetags.tags",
+            },
         },
     },
 ]
@@ -91,16 +111,10 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": "D:\data.db",
-        "OPTIONS": {"timeout": 20,},
+        "OPTIONS": {
+            "timeout": 20,
+        },
     },
-    # "user": {
-    #     "NAME": "slthr",
-    #     "ENGINE": "sql_server.pyodbc",
-    #     "HOST": "192.168.10.121",
-    #     "USER": "dsmsys",
-    #     "PASSWORD": "dsm@2021",
-    #     "OPTIONS": {"driver": "ODBC Driver 17 for SQL Server",},
-    # }
 }
 
 
@@ -108,10 +122,18 @@ DATABASES = {
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 
@@ -137,7 +159,9 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 
 # STATIC_ROOT = os.path.join(BASE_DIR + "/static")
+# LOGIN_URL = '/auth/login' #你的cas登录路由地址
 LOGIN_REDIRECT_URL = "/clientfile/clients"
 LOGOUT_REDIRECT_URL = "/accounts/login"
+
 
 ALLOWED_HOSTS = ["*"]

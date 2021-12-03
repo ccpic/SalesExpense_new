@@ -18,6 +18,7 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:60px">
     <div class="ui hidden divider"></div>
+    <div id="view_auth" style="display:none">{{ view_auth }}</div>
     {% if upload_auth %}
         <div class="ui container">
             <h2 class="ui blue dividing header">导入Excel</h2>
@@ -164,7 +165,9 @@ $(document).ready(function () {
                     'type': 'POST',
                     "url": sSource,
                     "dataType": "json",
-                    "data": {"aodata": JSON.stringify(aoData)},
+                    "data": {"aodata": JSON.stringify(aoData),
+                             "view_auth":$('#view_auth').text()
+                            },
                     "success": function (resp) {
                         fnCallback(resp);
                     }

@@ -30,6 +30,7 @@ from django.core import serializers
 import scipy.stats as stats
 from django.db.models import Max
 from .auth import build_staff_tree
+import ast
 
 try:
     from io import BytesIO as IO  # for modern python
@@ -154,13 +155,17 @@ COL_REINDEX = [
 ]
 
 
-@login_required()
 def clients(request):
-    view_auth, upload_auth = get_user_auth(request.user.username)  # 权限范围
+    print(request.GET, request.POST)
 
     if request.method == "GET":
+        view_auth, upload_auth = get_user_auth(request.user.username)  # 权限范围
         record_n = get_clients(view_auth).count
-        context = {"record_n": record_n, "upload_auth": upload_auth}
+        context = {
+            "record_n": record_n,
+            "upload_auth": upload_auth,
+            "view_auth": view_auth,
+        }
         return render(request, "clientfile/clients.html", context)
     else:
         # 查询常数设置
@@ -204,6 +209,7 @@ def clients(request):
         context = get_context_from_form(request)
 
         # 根据用户权限，前端参数，搜索关键字返回client objects
+        view_auth=ast.literal_eval(request.POST.get("view_auth"))
         clients = get_clients(view_auth, context, search_key)
 
         # 排序
@@ -602,18 +608,18 @@ def check_hplevel_with_dept(df):
 
 
 def get_user_auth(username: str) -> tuple:
-    staff_tree = build_staff_tree() #组织架构
+    staff_tree = build_staff_tree()  # 组织架构
     staff = staff_tree.find_staff("name", username)
-    if staff is not None: # 如果登录用户在组织架构内
+    if staff is not None:  # 如果登录用户在组织架构内
         staff_list = staff.get_descendants_list(attr="name")
-        if staff.position in UPLOAD_AUTH_POS: # 如果登录用户的岗位有上传权限
+        if staff.position in UPLOAD_AUTH_POS:  # 如果登录用户的岗位有上传权限
             upload_auth = True
         else:
             upload_auth = False
     else:
         staff_list = [username]
         upload_auth = True
-        
+
     return staff_list, upload_auth
 
 
