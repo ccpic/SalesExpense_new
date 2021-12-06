@@ -119,7 +119,7 @@ DSM客户档案管理
                     </div>
                 </h3>
                 <div class="ui divider"></div>
-                <div class="ui container" id='dsm_summary'
+                <div class="ui container" id='div_table_dsm'
                      style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
                 </div>
             </div>
@@ -131,7 +131,7 @@ DSM客户档案管理
                     </div>
                 </h3>
                 <div class="ui divider"></div>
-                <div class="ui container" id='rsp_summary'
+                <div class="ui container" id='div_table_rsp'
                      style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
                 </div>
             </div>
@@ -208,74 +208,74 @@ DSM客户档案管理
 
         $(
             function () {
-                getData('bar_line_potential_dist', '{% url 'clientfile:ajax_chart' 'bar_line_potential_dist' %}');
-                getData('pie_potential_level', '{% url 'clientfile:ajax_chart' 'pie_potential_level' %}');
-                getData('pie_dept', '{% url 'clientfile:ajax_chart' 'pie_dept' %}');
-                getData('bar_dept_potential', '{% url 'clientfile:ajax_chart' 'bar_dept_potential' %}');
-                getData('pie_hpaccess', '{% url 'clientfile:ajax_chart' 'pie_hpaccess' %}');
-                getData('bar_hpaccess_potential', '{% url 'clientfile:ajax_chart' 'bar_hpaccess_potential' %}');
-                getData('pie_hplevel', '{% url 'clientfile:ajax_chart' 'pie_hplevel' %}');
-                getData('bar_hplevel_potential', '{% url 'clientfile:ajax_chart' 'bar_hplevel_potential' %}');
-                getData('pie_title', '{% url 'clientfile:ajax_chart' 'pie_title' %}');
-                getData('bar_title_potential', '{% url 'clientfile:ajax_chart' 'bar_title_potential' %}');
-                // getData('treemap_rsp_hosp_client', '{% url 'clientfile:ajax_chart' 'treemap_rsp_hosp_client' %}');
-                // getData('bar_dsm', '{% url 'clientfile:ajax_chart' 'bar_dsm' %}');
-                getTable('dsm_summary', 'table_dsm', '{% url 'clientfile:ajax_table' '地区经理' %}');
-                getTable('rsp_summary', 'table_rsp', '{% url 'clientfile:ajax_table' '负责代表' %}');
+                $.ajax({
+                    // 请求的url
+                    url: '{% url 'clientfile:ajax_chart' %}',
+                    // 请求的type
+                    type: 'GET',
+                    data: data,
+                    // 发送的数据
+                    // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
+                    success:function(ret){     //成功执行
+                        // 把查询结果输出到网页上
+                        showChart("bar_dept_potential", JSON.parse(ret)["bar_dept_potential"])
+                        showChart('bar_line_potential_dist', JSON.parse(ret)['bar_line_potential_dist']);
+                        showChart('pie_potential_level', JSON.parse(ret)['pie_potential_level']);
+                        showChart('pie_dept', JSON.parse(ret)['pie_dept']);
+                        showChart('bar_dept_potential', JSON.parse(ret)['bar_dept_potential']);
+                        showChart('pie_hpaccess', JSON.parse(ret)['pie_hpaccess']);
+                        showChart('bar_hpaccess_potential', JSON.parse(ret)['bar_hpaccess_potential']);
+                        showChart('pie_hplevel', JSON.parse(ret)['pie_hplevel']);
+                        showChart('bar_hplevel_potential', JSON.parse(ret)['bar_hplevel_potential']);
+                        showChart('pie_title', JSON.parse(ret)['pie_title']);
+                        showChart('bar_title_potential', JSON.parse(ret)['bar_title_potential']);
+                        // showChart('treemap_rsp_hosp_client', JSON.parse(ret)['treemap_rsp_hosp_client']);
+                        // showChart('bar_dsm', JSON.parse(ret)['bar_dsm']);
+                        $('#div_table_dsm').html(JSON.parse(ret)["table_dsm"]);
+                        $('#table_dsm').DataTable(
+                            {
+                                order: [[1, "desc"]],
+                                pageLength: 25,
+                                autoWidth: false,
+                                bProcessing: true, //是否显示加载
+                                language: {
+                                    search: "在记录中搜索:",
+                                    sLengthMenu: "每页显示 _MENU_ 条记录",
+                                    sProcessing: "处理中..."
+                                }
+                            });
+                        $('#div_table_rsp').html(JSON.parse(ret)["table_rsp"]);
+                        $('#table_rsp').DataTable(
+                            {
+                                order: [[1, "desc"]],
+                                pageLength: 25,
+                                autoWidth: false,
+                                bProcessing: true, //是否显示加载
+                                language: {
+                                    search: "在记录中搜索:",
+                                    sLengthMenu: "每页显示 _MENU_ 条记录",
+                                    sProcessing: "处理中..."
+                                }
+                            });
+                    },
+                    error: function () {            //失败
+                        console.log('失败')
+                    }
+                });
             }
         );
 
-        function getTable(div_id, table_id, ajax_url){
-            data["table_id"] = table_id;
-            $.ajax({
-                // 请求的url
-                url: ajax_url,
-                // 请求的type
-                type: 'GET',
-                data: data,
-                // 发送的数据
-                // 回调函数，其中ret是返回的JSON，可以以字典的方式调用
-                success:function(ret){     //成功执行
-                    // 把查询结果输出到网页上
-                    $('#'+div_id).html(ret);
+        function showChart(dom_id, chart_options) {
 
-
-                    $('#'+table_id).DataTable(
-                        {
-                            order: [[1, "desc"]],
-                            pageLength: 25,
-                            autoWidth: false,
-                            bProcessing: true, //是否显示加载
-                            language: {
-                                search: "在记录中搜索:",
-                                sLengthMenu: "每页显示 _MENU_ 条记录",
-                                sProcessing: "处理中..."
-                            }
-                        });
-                },
-                error: function () {            //失败
-                    console.log('失败')
-                }
-            });
-        }
-        function getData(chart_id, ajax_url) {
-
-            var chart = echarts.init(document.getElementById(chart_id), 'white', {renderer: 'canvas'});
+            var chart = echarts.init(document.getElementById(dom_id), 'white', {renderer: 'canvas'});
 
             chart.showLoading({
                 text: '正在加载数据'
             });  //增加提示
-            $.ajax({
-                type: "GET",
-                url: ajax_url,
-                data: data,
-                dataType: 'json',
-                success: function (ret) {
-                    chart.clear();
-                    chart.setOption(ret.data);
-                    chart.hideLoading();
-                }
-            });
+            
+            chart.clear();
+            chart.setOption(JSON.parse(chart_options));
+            chart.hideLoading();
         }
     }
 </script>

@@ -1,9 +1,9 @@
 {% load static %}
 {% url 'clientfile:clients'  oa_account=oa_account eid=eid as clients_url %}
 {% url 'clientfile:analysis'  oa_account=oa_account eid=eid as analysis_url %}
-{% url 'clientfile:history' as history_url %}
-{% url 'clientfile:groups' as groups_url %}
-{% url 'admin:index' as admin_url %}
+{% url 'clientfile:history' oa_account=oa_account eid=eid as history_url %}
+{% comment %} {% url 'clientfile:groups' as groups_url %} {% endcomment %}
+{% comment %} {% url 'admin:index' as admin_url %} {% endcomment %}
 
 <div class="ui large top fixed inverted menu" id="nav_menu">
     <div class="ui container">
@@ -21,10 +21,10 @@
 <!--                <a href={% url 'sheets:hospitals' %} class="item">医院-代表</a>-->
 <!--            </div>-->
 <!--        </div>-->
-        {%  if request.user.is_staff  %}
-            <a href="{{ history_url }}" class="{% if request.get_full_path == history_url %}active red{% endif %} item">操作记录</a>
-            <a href="{{ admin_url }}" class="{% if request.get_full_path == admin_url %}active red{% endif %} item">后台管理</a>
-        {% endif %}
+
+        <a href="{{ history_url }}" class="{% if request.get_full_path == history_url %}active red{% endif %} item">操作记录</a>
+        {% comment %} <a href="{{ admin_url }}" class="{% if request.get_full_path == admin_url %}active red{% endif %} item">后台管理</a> {% endcomment %}
+
     </div>
     <div class="right menu">
         {% if oa_account %}

@@ -64,15 +64,7 @@ class ChartView(APIView):
         return json_response(json.loads(get_chart(request, chart)))
 
 
-def get_chart(request, chart):
-    context = get_context_from_form(request)
-    group_id = request.GET.get("group_id")
-    if group_id is None:
-        df = get_df_clients(request.session["view_auth"], context=context)
-    else:
-        df = get_df_clients(
-            request.session["view_auth"], context=context, is_deleted=True, group_id=group_id
-        )
+def get_chart(df: pd.DataFrame, chart: str) -> str:
     if chart == "scatter_client":
         df["客户姓名"] = (
             df["区域"]
@@ -182,38 +174,60 @@ def get_chart(request, chart):
             sorted(df_count.index, key=lambda x: float(x.split(", ")[0][1:]))
         ].to_frame()
         c = bar(df_sorted, show_label=True, label_rotate=30)
-    elif chart == "treemap_rsp_hosp_client":
-        pivoted = pd.pivot_table(
-            df, index=["负责代表", "医院全称", "客户姓名"], values="月累计相关病人数", aggfunc=sum
-        )
-        df = pivoted.reset_index()
+    # elif chart == "treemap_rsp_hosp_client":
+    #     pivoted = pd.pivot_table(
+    #         df, index=["负责代表", "医院全称", "客户姓名"], values="月累计相关病人数", aggfunc=sum
+    #     )
+    #     df = pivoted.reset_index()
 
-        list_rsp = [
-            {"value": sum(v.tolist()), "name": k}
-            for k, v in df.groupby("负责代表")["月累计相关病人数"]
-        ]
-        for rsp in list_rsp:
-            df2 = df[df["负责代表"] == rsp["name"]]
-            list_hosp = [
-                {"value": sum(v.tolist()), "name": k}
-                for k, v in df2.groupby("医院全称")["月累计相关病人数"]
-            ]
-            rsp["children"] = list_hosp
-            for hosp in list_hosp:
-                df3 = df[(df["负责代表"] == rsp["name"]) & (df["医院全称"] == hosp["name"])]
-                list_client = [
-                    {"value": sum(v.tolist()), "name": k}
-                    for k, v in df3.groupby("客户姓名")["月累计相关病人数"]
-                ]
-                hosp["children"] = list_client
+    #     list_rsp = [
+    #         {"value": sum(v.tolist()), "name": k}
+    #         for k, v in df.groupby("负责代表")["月累计相关病人数"]
+    #     ]
+    #     for rsp in list_rsp:
+    #         df2 = df[df["负责代表"] == rsp["name"]]
+    #         list_hosp = [
+    #             {"value": sum(v.tolist()), "name": k}
+    #             for k, v in df2.groupby("医院全称")["月累计相关病人数"]
+    #         ]
+    #         rsp["children"] = list_hosp
+    #         for hosp in list_hosp:
+    #             df3 = df[(df["负责代表"] == rsp["name"]) & (df["医院全称"] == hosp["name"])]
+    #             list_client = [
+    #                 {"value": sum(v.tolist()), "name": k}
+    #                 for k, v in df3.groupby("客户姓名")["月累计相关病人数"]
+    #             ]
+    #             hosp["children"] = list_client
 
-        c = treemap(list_rsp, str(request.user))
+    #     c = treemap(list_rsp, str(request.user))
     return c.dump_options()
 
 
-def ajax_table(request, index):
+def ajax_chart(request):
     context = get_context_from_form(request)
     df = get_df_clients(request.session["view_auth"], context)
+
+    context = {
+        'bar_line_potential_dist': get_chart(df, 'bar_line_potential_dist'),
+        'pie_potential_level':get_chart(df,'bar_line_potential_dist' ),
+        'pie_dept':get_chart(df, 'bar_line_potential_dist'),
+        'bar_dept_potential':get_chart(df, 'bar_line_potential_dist'),
+        'pie_hpaccess':get_chart(df, 'bar_line_potential_dist'),
+        'bar_hpaccess_potential':get_chart(df, 'bar_line_potential_dist'),
+        'pie_hplevel':get_chart(df,'bar_line_potential_dist' ),
+        'bar_hplevel_potential':get_chart(df,'bar_line_potential_dist' ),
+        'pie_title':get_chart(df,'bar_line_potential_dist' ),
+        'bar_title_potential':get_chart(df,'bar_line_potential_dist' ),
+        # 'treemap_rsp_hosp_client':get_chart(df,'bar_line_potential_dist' ),
+        'bar_dsm':get_chart(df, 'bar_line_potential_dist'),
+        "table_dsm": get_table(df, "地区经理", "table_dsm"),
+        "table_rsp": get_table(df, "负责代表", "table_rsp"),
+    }
+
+    return HttpResponse(json.dumps(context, ensure_ascii=False))
+
+
+def get_table(df: pd.DataFrame, index: str, table_id: str) -> str:
     df_client_n = pd.pivot_table(df, index=index, values="客户姓名", aggfunc="count")
     df_client_n_cv = client_count(df, "所在科室", "心内科", index)
     df_client_n_np = client_count(df, "所在科室", "肾内科", index)
@@ -274,10 +288,11 @@ def ajax_table(request, index):
     table = df_combined.to_html(
         formatters=build_formatters_by_col(df_combined),
         classes="ui celled table",
-        table_id=context["table_id"],
+        table_id=table_id,
         escape=False,
     )
-    return HttpResponse(table)
+
+    return table
 
 
 def get_unique(qs, field):

@@ -22,14 +22,9 @@ urlpatterns = [
     ),  # 导出档案记录
     path(r"analysis/<str:oa_account>/<int:eid>/", views_analysis.analysis, name="analysis"),  # 分析现有档案
     path(
-        r"ajax_chart/<str:chart>/",
-        views_analysis.ChartView.as_view(),
-        name="ajax_chart",
-    ),  # Ajax出图
-    path(
-        r"ajax_table/<str:index>/", views_analysis.ajax_table, name="ajax_table"
+        r"ajax_chart", views_analysis.ajax_chart, name="ajax_chart"
     ),  # Ajax出表
-    path(r"history", views_history.history, name="history"),  # 档案记录
+    path(r"history/<str:oa_account>/<int:eid>/", views_history.history, name="history"),  # 档案记录
 #     path(
 #         r"groups/export", views_groups.export_groups, name="export_groups"
 #     ),  # 导出客户事件记录
