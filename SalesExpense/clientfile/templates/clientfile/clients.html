@@ -18,74 +18,85 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:60px">
     <div class="ui hidden divider"></div>
-    <div id="view_auth" style="display:none">{{ view_auth }}</div>
-    {% if upload_auth %}
-        <div class="ui container">
-            <h2 class="ui blue dividing header">导入Excel</h2>
-            <a href="{% static 'media/客户档案模板.xlsx' %}">下载客户档案模板</a>
-            <form class="ui form" enctype="multipart/form-data" id="upload-form" method="post"  action="{% url 'clientfile:import_excel' %}">
-                {% csrf_token %}
-                <div class="field">
-                    <div class="ui action input">
-                        <input type="text" id="_attachmentName">
-                        <label for="attachmentName" class="ui button btn-file">
-                             <i class="upload icon"></i>选择本地Excel
-                             <input type="file" id="attachmentName" name="attachmentName" style="display: none"
-                                    accept="text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" >
-                        </label>
+    {% if request.session.view_auth %}
+        {% if request.session.upload_auth %}
+            <div class="ui container">
+                <h2 class="ui blue dividing header">导入Excel</h2>
+                <a href="{% static 'media/客户档案模板.xlsx' %}">下载客户档案模板</a>
+                <form class="ui form" enctype="multipart/form-data" id="upload-form" method="post"  action="{% url 'clientfile:import_excel' %}">
+                    {% csrf_token %}
+                    <div class="field">
+                        <div class="ui action input">
+                            <input type="text" id="_attachmentName">
+                            <label for="attachmentName" class="ui button btn-file">
+                                <i class="upload icon"></i>选择本地Excel
+                                <input type="file" id="attachmentName" name="attachmentName" style="display: none"
+                                        accept="text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" >
+                            </label>
+                        </div>
                     </div>
+                    <input type="button" id="upload" class="ui blue submit button" value="同步数据至平台">
+                </form>
+                <div class="ui hidden info message" id="msg"></div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {% endif %}
+        <div class="ui container">
+            <h2 class="ui blue dividing header">现有档案</h2>
+            <div class="ui labeled button" tabindex="0">
+                <div type="button" class="ui classic blue button" id="export_excel" onclick="location.href='{% url 'clientfile:export_clients' %}'">
+                    <i class="file excel outline icon"></i> 导出至Excel
                 </div>
-                <input type="button" id="upload" class="ui blue submit button" value="同步数据至平台">
-            </form>
-            <div class="ui hidden info message" id="msg"></div>
+                <a class="ui basic left pointing blue label">
+                    {{ record_n }}条档案
+                </a>
+            </div>
+
+            <div class="ui hidden divider"></div>
+            <div class="ui container" id='result_table'>
+                <table cellpadding="0" cellspacing="0" border="0" id="table" class="ui celled table">
+                </table>
+            </div>
         </div>
-        <div class="ui hidden divider"></div>
+
+        <div class="ui modal" id="modal_sync_warning">
+            <i class="close icon"></i>
+            <div class="header">
+                警告
+            </div>
+            <div class="content">
+                {% if record_n > 0 %}
+                该动作会将本地Excel文件同步至服务器，服务器原有<span style="color: dodgerblue; ">{{ oa_account }}</span>的<span style="color: dodgerblue; ">{{ record_n }}</span>相关记录将被删除或覆盖
+                {% else %}
+                该动作会将本地Excel文件同步至服务器
+                {% endif %}
+            </div>
+            <div class="actions">
+                <div class="ui black deny button">
+                    取消
+                </div>
+                <div class="ui positive right labeled icon button">
+                    确认同步
+                    <i class="checkmark icon"></i>
+                </div>
+            </div>
+        </div>
+            
+    {% else %}
+        <div class="ui middle aligned center aligned grid" style="min-height: 450px;">
+            <div class="column" style="max-width: 800px;">
+                <div class="ui icon huge negative message">
+                    <i class="lock icon"></i>
+                    <div class="content">
+                        <div class="header">
+                        没有浏览权限
+                        </div>
+                        <p>如有疑问，请联系管理员</p>
+                        </div>
+                </div>
+            </div>
+        </div>
     {% endif %}
-    <div class="ui left rail">
-        <div class="ui segment">
-          Left Rail Content
-        </div>
-      </div>
-    <div class="ui container">
-        <h2 class="ui blue dividing header">现有档案</h2>
-        <div class="ui labeled button" tabindex="0">
-            <div type="button" class="ui classic blue button" id="export_excel" onclick="location.href='{% url 'clientfile:export_clients' %}'">
-                <i class="file excel outline icon"></i> 导出至Excel
-            </div>
-            <a class="ui basic left pointing blue label">
-                {{ record_n }}条档案
-            </a>
-        </div>
-
-        <div class="ui hidden divider"></div>
-        <div class="ui container" id='result_table'>
-            <table cellpadding="0" cellspacing="0" border="0" id="table" class="ui celled table">
-            </table>
-        </div>
-    </div>
-
-    <div class="ui modal" id="modal_sync_warning">
-        <i class="close icon"></i>
-        <div class="header">
-            警告
-        </div>
-        <div class="content">
-            {% if record_n > 0 %}
-            该动作会将本地Excel文件同步至服务器，服务器原有<span style="color: dodgerblue; ">{{ request.user }}</span>的<span style="color: dodgerblue; ">{{ record_n }}</span>相关记录将被删除或覆盖
-            {% else %}
-            该动作会将本地Excel文件同步至服务器
-            {% endif %}
-        </div>
-        <div class="actions">
-            <div class="ui black deny button">
-                取消
-            </div>
-            <div class="ui positive right labeled icon button">
-                确认同步
-                <i class="checkmark icon"></i>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script type="text/javascript">
@@ -166,7 +177,7 @@ $(document).ready(function () {
                     "url": sSource,
                     "dataType": "json",
                     "data": {"aodata": JSON.stringify(aoData),
-                             "view_auth":$('#view_auth').text()
+                             "view_auth": "{{ request.session.view_auth|safe }}",
                             },
                     "success": function (resp) {
                         fnCallback(resp);
@@ -203,7 +214,7 @@ $(document).ready(function () {
         }
     }
 
-    var urlParam = '{% url 'clientfile:clients' %}'
+    var urlParam = '{% url 'clientfile:clients' oa_account=oa_account eid=eid %}'
     var columnsParam = [
         {title: "南北中国", data: "bu"},
         {title: "区域", data: "rd"},

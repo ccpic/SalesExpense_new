@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+# from django.contrib.auth.decorators import login_required
 from .models import *
+from django.core.handlers.wsgi import WSGIRequest
 
 # from sheets.models import Staff
 from sheets.views import build_formatters_by_col
@@ -29,7 +30,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core import serializers
 import scipy.stats as stats
 from django.db.models import Max
-from .auth import build_staff_tree
+from .auth import get_user_auth
 import ast
 
 try:
@@ -40,7 +41,7 @@ except ImportError:
 pd.set_option("display.max_columns", 5000)
 pd.set_option("display.width", 5000)
 
-UPLOAD_AUTH_POS = ["地区经理", "高级地区经理"]
+
 D_SEARCH_FIELD = {
     "省/自治区/直辖市": "province",
     "南北中国": "bu",
@@ -155,16 +156,17 @@ COL_REINDEX = [
 ]
 
 
-def clients(request):
-    print(request.GET, request.POST)
-
+# @login_required
+def clients(request: WSGIRequest, oa_account: str, eid: int) -> any:
     if request.method == "GET":
-        view_auth, upload_auth = get_user_auth(request.user.username)  # 权限范围
+        view_auth, upload_auth = get_user_auth(oa_account, eid)  # 权限范围
         record_n = get_clients(view_auth).count
+        request.session["upload_auth"] = upload_auth
+        request.session["view_auth"] = view_auth
         context = {
             "record_n": record_n,
-            "upload_auth": upload_auth,
-            "view_auth": view_auth,
+            "oa_account": oa_account,
+            "eid": eid,
         }
         return render(request, "clientfile/clients.html", context)
     else:
@@ -209,7 +211,7 @@ def clients(request):
         context = get_context_from_form(request)
 
         # 根据用户权限，前端参数，搜索关键字返回client objects
-        view_auth=ast.literal_eval(request.POST.get("view_auth"))
+        view_auth = ast.literal_eval(request.POST.get("view_auth"))
         clients = get_clients(view_auth, context, search_key)
 
         # 排序
@@ -290,7 +292,7 @@ def clients(request):
         return HttpResponse(json.dumps(dataTable, ensure_ascii=False))
 
 
-@login_required()
+# @login_required()
 def client_detail(request, id):
     client = Client.objects.get(pk=id)
     client_monthly_patients = client.monthly_patients()
@@ -379,9 +381,10 @@ def client_detail(request, id):
     return render(request, "clientfile/client_detail.html", context)
 
 
-@login_required()
+# @login_required()
 def export_clients(request):
-    df = get_df_clients(request.user.username)
+    view_auth = request.session["view_auth"]
+    df = get_df_clients(view_auth)
     excel_file = IO()
 
     xlwriter = pd.ExcelWriter(excel_file, engine="xlsxwriter")
@@ -405,7 +408,7 @@ def export_clients(request):
     return response
 
 
-@login_required()
+# @login_required()
 def import_excel(request):
     SHEET_NAME = "客户档案"
     context = {"code": 0, "msg": ""}
@@ -430,10 +433,10 @@ def import_excel(request):
                     return JsonResponse(context)
                 else:
                     if (
-                        dsm_auth(request.user, df["地区经理"].unique())[0] is False
+                        dsm_auth(request.session["view_auth"], df["地区经理"].unique())[0] is False
                     ):  # 权限检查，只能上传自己/下属dsm的数据
                         context["msg"] = "权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据" + str(
-                            dsm_auth(request.user, df[COL[3]].unique())[1]
+                            dsm_auth(request.session["view_auth"], df[COL[3]].unique())[1]
                         )
                         return JsonResponse(context)
                     else:
@@ -607,25 +610,8 @@ def check_hplevel_with_dept(df):
     return d_error
 
 
-def get_user_auth(username: str) -> tuple:
-    staff_tree = build_staff_tree()  # 组织架构
-    staff = staff_tree.find_staff("name", username)
-    if staff is not None:  # 如果登录用户在组织架构内
-        staff_list = staff.get_descendants_list(attr="name")
-        if staff.position in UPLOAD_AUTH_POS:  # 如果登录用户的岗位有上传权限
-            upload_auth = True
-        else:
-            upload_auth = False
-    else:
-        staff_list = [username]
-        upload_auth = True
-
-    return staff_list, upload_auth
-
-
-def dsm_auth(user, dsm_list):
-    staff_list = get_user_auth(user.username)[0]
-    return set(dsm_list).issubset(staff_list), set(dsm_list) - set(staff_list)
+def dsm_auth(user_auth, dsm_list):
+    return set(dsm_list).issubset(user_auth), set(dsm_list) - set(user_auth)
 
 
 def get_clients(
@@ -692,8 +678,8 @@ def get_clients(
     return clients
 
 
-def client_search(response, kw):
-    user_auth = get_user_auth(response.user.username)
+def client_search(response: WSGIRequest, oa_account: str, eid: int, kw: str) -> json:
+    user_auth = get_user_auth(oa_account, eid)
     clients_obj = get_clients(user_auth=user_auth, name_and_hosp=kw)
     print("search")
     try:

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from django.shortcuts import render
 from rest_framework.views import APIView
-from django.contrib.auth.decorators import login_required
+from django.core.handlers.wsgi import WSGIRequest
+from .auth import get_user_auth
+
+# from django.contrib.auth.decorators import login_required
 from sheets.models import Staff
 from sheets.views import build_formatters_by_col
 import pandas as pd
@@ -19,11 +22,14 @@ from .views_clients import (
 SERIES_LIMIT = 10  # 所有画图需要限制的系列数
 
 
-@login_required()
-def analysis(request):
+# @login_required()
+def analysis(request: WSGIRequest, oa_account: str, eid: int):
     DISPLAY_LENGTH = 20
+    print(request.session)
+    view_auth = get_user_auth(oa_account, eid)[0]
+    request.session["view_auth"] = view_auth
     context = get_context_from_form(request)
-    clients = get_clients(request.user, context)
+    clients = get_clients(view_auth, context)
     clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
     paginator = Paginator(clients, DISPLAY_LENGTH)
     page = request.POST.get("page")
@@ -38,6 +44,8 @@ def analysis(request):
         "num_pages": paginator.num_pages,
         "record_n": paginator.count,
         "display_length": DISPLAY_LENGTH,
+        "oa_account": oa_account,
+        "eid": eid,
     }
     if request.is_ajax():
         return render(request, "clientfile/client_cards.html", context)
@@ -60,10 +68,10 @@ def get_chart(request, chart):
     context = get_context_from_form(request)
     group_id = request.GET.get("group_id")
     if group_id is None:
-        df = get_df_clients(request.user, context=context)
+        df = get_df_clients(request.session["view_auth"], context=context)
     else:
         df = get_df_clients(
-            request.user, context=context, is_deleted=True, group_id=group_id
+            request.session["view_auth"], context=context, is_deleted=True, group_id=group_id
         )
     if chart == "scatter_client":
         df["客户姓名"] = (
@@ -205,7 +213,7 @@ def get_chart(request, chart):
 
 def ajax_table(request, index):
     context = get_context_from_form(request)
-    df = get_df_clients(request.user, context)
+    df = get_df_clients(request.session["view_auth"], context)
     df_client_n = pd.pivot_table(df, index=index, values="客户姓名", aggfunc="count")
     df_client_n_cv = client_count(df, "所在科室", "心内科", index)
     df_client_n_np = client_count(df, "所在科室", "肾内科", index)

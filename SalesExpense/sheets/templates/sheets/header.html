@@ -1,19 +1,19 @@
 {% load static %}
-{% url 'clientfile:clients' as clients_url %}
-{% url 'clientfile:analysis' as analysis_url %}
+{% url 'clientfile:clients'  oa_account=oa_account eid=eid as clients_url %}
+{% url 'clientfile:analysis'  oa_account=oa_account eid=eid as analysis_url %}
 {% url 'clientfile:history' as history_url %}
 {% url 'clientfile:groups' as groups_url %}
 {% url 'admin:index' as admin_url %}
 
 <div class="ui large top fixed inverted menu" id="nav_menu">
     <div class="ui container">
-        <a href="#" class="header item">
+        <div href="#" class="header item">
             <img class="logo" src="{% static 'assets/images/logo.png' %}">
             DSM数据管理
-        </a>
+        </div>
         <a href="{{ clients_url }}" class="{% if request.get_full_path == clients_url %}active red{% endif %} item">档案管理</a>
         <a href="{{ analysis_url }}"  class="{% if request.get_full_path == analysis_url %}active red{% endif %} item">档案分析</a>
-        <a href="{{ groups_url }}"  class="{% if request.get_full_path == groups_url %}active red{% endif %} item">客户分组事件</a>
+        {% comment %} <a href="{{ groups_url }}"  class="{% if request.get_full_path == groups_url %}active red{% endif %} item">客户分组事件</a> {% endcomment %}
 <!--         <div class="ui simple dropdown item">-->
 <!--            费用管理 <i class="dropdown icon"></i>-->
 <!--            <div class="menu">-->
@@ -27,7 +27,12 @@
         {% endif %}
     </div>
     <div class="right menu">
-        {%  if not request.user.username  %}
+        {% if oa_account %}
+            <div class="ui item">
+                您好，{{ oa_account }}
+            </div>
+        {% endif %}
+        {% comment %} {%  if not request.user.username  %}
             <div class="ui item">
                 未登录
             </div>
@@ -38,7 +43,7 @@
             <a class="ui item" href="{% url 'logout' %}">
                 切换用户
             </a>
-        {% endif %}
+        {% endif %} {% endcomment %}
   </div>
 </div>
 

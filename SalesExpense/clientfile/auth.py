@@ -7,6 +7,7 @@ from anytree.exporter import DotExporter
 import json
 
 SALES_POS = ["高级地区经理", "销售总监", "大区经理", "地区经理", "大区副总监", "高级大区经理", "区域销售总监", "区域销售副总监"]
+UPLOAD_AUTH_POS = ["地区经理", "高级地区经理"]
 
 
 class Staff(NodeMixin):  # Add Node feature
@@ -47,7 +48,7 @@ class Staff(NodeMixin):  # Add Node feature
 # def get_df_hr() -> pd.DataFrame: # pandas方便，测试用
 #     with open('../env.json', 'r') as env:
 #         ENV_CONST = json.loads(env)
-        
+
 #     VIEW_TABLE = ENV_CONST["view_table"]
 
 #     conn = pyodbc.connect(
@@ -87,16 +88,13 @@ class Staff(NodeMixin):  # Add Node feature
 #     return df
 
 
-def build_staff_tree() -> Node: # 生成组织架构
-    all_staffs = get_dict_hr()
+def build_staff_tree(ENV_CONST: dict) -> Node:  # 生成组织架构
+    all_staffs = get_dict_hr(ENV_CONST)
 
-    with open('./env.json', 'r',encoding='utf-8') as env:
-        ENV_CONST = json.load(env)
-        
-    ROOT_ID = ENV_CONST['root_id']
-    ROOT_NAME = ENV_CONST['root_name']
-    ROOT_POS = ENV_CONST['root_pos']
-    ROOT_OA = ENV_CONST['root_oa']
+    ROOT_ID = ENV_CONST["root_id"]
+    ROOT_NAME = ENV_CONST["root_name"]
+    ROOT_POS = ENV_CONST["root_pos"]
+    ROOT_OA = ENV_CONST["root_oa"]
 
     dict_staffs = {
         n["eid"]: Staff(n["eid"], n["姓名"], n["岗位名称"], n["OA账号"]) for n in all_staffs
@@ -112,10 +110,8 @@ def build_staff_tree() -> Node: # 生成组织架构
     return root
 
 
-def get_dict_hr() -> dict:
-    with open('./env.json', 'r', encoding='utf-8') as env:
-        ENV_CONST = json.load(env)
-        
+def get_dict_hr(ENV_CONST: dict) -> dict:
+
     VIEW_TABLE = ENV_CONST["view_table"]
 
     conn = pyodbc.connect(
@@ -145,10 +141,35 @@ def get_dict_hr() -> dict:
     return result
 
 
+def get_user_auth(oa_account: str, eid: int) -> tuple:  # 返回一个权限架构下所有姓名的tuple
+    with open("./env.json", "r", encoding="utf-8") as env:
+        ENV_CONST = json.load(env)
+    staff_tree = build_staff_tree(ENV_CONST)  # 组织架构
+    staff = staff_tree.find_staff("oa_account", oa_account)
+    if staff is not None:  # 如果用户的oa账号在组织架构内
+        if staff.id == eid:  # oa必须和eid对应上
+            staff_list = staff.get_descendants_list(attr="name")
+            if staff.position in UPLOAD_AUTH_POS:  # 如果登录用户的岗位有上传权限
+                upload_auth = True
+            else:
+                upload_auth = False
+        else:
+            staff_list = []
+            upload_auth = False
+    else:
+        staff_list = []
+        upload_auth = False
+
+    return staff_list, upload_auth
+
+
 if __name__ == "__main__":
     # df = get_df_hr()
     # df = df.loc[:, ["eid", "直属上级id", "姓名"]]
     # print(df["岗位名称"].unique())
-    staff_tree = build_staff_tree()
-    user = staff_tree.find_staff("name", "王明星")
-    print(user.name)
+    with open("../env.json", "r", encoding="utf-8") as env:
+        ENV_CONST = json.load(env)
+
+    staff_tree = build_staff_tree(ENV_CONST)
+    user = staff_tree.find_staff("name", "王宝龙")
+    print(user.name, user.position, user.oa_account, user.id)

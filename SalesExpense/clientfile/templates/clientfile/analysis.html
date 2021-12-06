@@ -166,7 +166,7 @@ DSM客户档案管理
         };
         $.ajax({
             // 请求的url
-            url: '{% url 'clientfile:analysis' %}',
+            url: '{% url 'clientfile:analysis' oa_account=oa_account eid=eid %}',
             // 请求的type
             type:'POST',
             // 发送的数据

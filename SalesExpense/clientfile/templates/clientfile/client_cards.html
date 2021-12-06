@@ -112,7 +112,7 @@
         };
         $.ajax({
             type:"POST",
-            url:'{% url 'clientfile:analysis' %}',
+            url:'{% url 'clientfile:analysis' oa_account=oa_account eid=eid %}',
             data:data,
             success:function(ret){
                 $('#client_cards').html(ret);
