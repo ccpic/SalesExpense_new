@@ -221,7 +221,7 @@ DSM客户档案管理
             </table>
             {% endif %}
         </div>
-                {% if groups %}
+        {% comment %} {% if groups %}
         <div class="ui tab segment" data-tab="groups">
             <h3 class="header">客户所在分组事件</h3>
             <div class="ui divider"></div>
@@ -246,13 +246,13 @@ DSM客户档案管理
                 </tbody>
             </table>
         </div>
-        {% endif %}
+        {% endif %} {% endcomment %}
     </div>
     </div>
 </div>
 
 
-<script type="text/javascript">
+{% comment %} <script type="text/javascript">
     $(document).ready(function() {
         output();
     });
@@ -299,7 +299,7 @@ DSM客户档案管理
             });
         }
     }
-</script>
+</script> {% endcomment %}
 <script>
     $(document).ready(function(){
         $('.pointing.secondary.menu .item').tab();

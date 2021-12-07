@@ -62,6 +62,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "clientfile.auth.AutomaticUserLoginMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -69,10 +70,11 @@ MIDDLEWARE = [
     # 'django_cas_ng.middleware.CASMiddleware'
 ]
 
-# AUTHENTICATION_BACKENDS = (
-#     'django.contrib.auth.backends.ModelBackend',
-#     'django_cas_ng.backends.CASBackend',
-# )
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "clientfile.auth.AuthenticationBackend",
+    # 'django_cas_ng.backends.CASBackend',
+)
 
 # # CAS 的地址
 # CAS_SERVER_URL = 'http://oa.salubris.cn:8088/sso/login'

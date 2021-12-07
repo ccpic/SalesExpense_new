@@ -18,8 +18,8 @@ DSM客户档案管理
 {% block index %}
 <div id="pusher" class="pusher" style="padding-top:60px">
     <div class="ui hidden divider"></div>
-    {% if request.session.view_auth %}
-        {% if request.session.upload_auth %}
+    {% if user.staff.desendants %}
+        {% if '地区经理' in user.staff.position %}
             <div class="ui container">
                 <h2 class="ui blue dividing header">导入Excel</h2>
                 <a href="{% static 'media/客户档案模板.xlsx' %}">下载客户档案模板</a>
@@ -66,7 +66,7 @@ DSM客户档案管理
             </div>
             <div class="content">
                 {% if record_n > 0 %}
-                该动作会将本地Excel文件同步至服务器，服务器原有<span style="color: dodgerblue; ">{{ oa_account }}</span>的<span style="color: dodgerblue; ">{{ record_n }}</span>相关记录将被删除或覆盖
+                该动作会将本地Excel文件同步至服务器，服务器原有<span style="color: dodgerblue; ">{{ request.user.username }}</span>的<span style="color: dodgerblue; ">{{ record_n }}</span>相关记录将被删除或覆盖
                 {% else %}
                 该动作会将本地Excel文件同步至服务器
                 {% endif %}
@@ -214,7 +214,7 @@ $(document).ready(function () {
         }
     }
 
-    var urlParam = '{% url 'clientfile:clients' oa_account=oa_account eid=eid %}'
+    var urlParam = '{% url 'clientfile:clients' %}'
     var columnsParam = [
         {title: "南北中国", data: "bu"},
         {title: "区域", data: "rd"},

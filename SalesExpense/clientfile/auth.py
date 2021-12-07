@@ -5,9 +5,88 @@ import pandas as pd
 from anytree import Node, NodeMixin, RenderTree, search
 from anytree.exporter import DotExporter
 import json
+from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth.models import User, Group
+from django.contrib import auth
+from django.contrib.auth.middleware import MiddlewareMixin
+from django.http import HttpResponseForbidden
+from django.urls import reverse
 
 SALES_POS = ["高级地区经理", "销售总监", "大区经理", "地区经理", "大区副总监", "高级大区经理", "区域销售总监", "区域销售副总监"]
 UPLOAD_AUTH_POS = ["地区经理", "高级地区经理"]
+
+
+class AutomaticUserLoginMiddleware(MiddlewareMixin):
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        if request.path.startswith(reverse('admin:index')): # 此中间件不对admin页面生效
+            return None
+        else:
+            if request.method == "GET":
+                username = request.GET.get("oa_account")
+                # if AutomaticUserLoginMiddleware._is_user_authenticated(request):
+                #     auth.logout(request) # 如已登录先登出
+                if not AutomaticUserLoginMiddleware._is_user_authenticated(request) or (
+                    request.user.username != username
+                ):  # 未登录状态或登录名与url不符
+                    user = auth.authenticate(request)
+                    if user is None:
+                        return HttpResponseForbidden()
+
+                    request.user = user
+                    auth.login(request, user)
+            else:
+                pass
+
+    @staticmethod
+    def _is_user_authenticated(request):
+        user = request.user
+        return user and user.is_authenticated
+
+
+class AuthenticationBackend(ModelBackend):
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        print(request.GET)
+        # 获取GET参数
+        username = request.GET.get("oa_account")
+        password = request.GET.get("eid")
+        if password is not None and password.isnumeric():
+            password = int(password)
+
+        # 调用自定义get_user_auth方法检查权限
+        staff, staff_list = get_user_auth(username, password)
+        print(staff_list)
+        if staff_list == []:
+            return None
+
+        request.session["view_auth"] = staff_list
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            user = User(username=username)
+
+        user.password = password
+        user.is_staff = False
+        user.save()
+
+        user.staff.name = staff.name
+        user.staff.position = staff.position
+        user.staff.desendants = staff_list
+        user.staff.save()
+        
+        if staff.position in UPLOAD_AUTH_POS:
+            group_dsm = Group.objects.get(name="地区经理")
+            if user.groups.filter(name="地区经理").exists() is False:
+                group_dsm.user_set.add(user)
+            group_dsm.save()
+
+        return user
+
+    def get_user(self, user_id):
+        try:
+            return User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return None
 
 
 class Staff(NodeMixin):  # Add Node feature
@@ -149,18 +228,18 @@ def get_user_auth(oa_account: str, eid: int) -> tuple:  # 返回一个权限架�
     if staff is not None:  # 如果用户的oa账号在组织架构内
         if staff.id == eid:  # oa必须和eid对应上
             staff_list = staff.get_descendants_list(attr="name")
-            if staff.position in UPLOAD_AUTH_POS:  # 如果登录用户的岗位有上传权限
-                upload_auth = True
-            else:
-                upload_auth = False
+            # if staff.position in UPLOAD_AUTH_POS:  # 如果登录用户的岗位有上传权限
+            #     upload_auth = True
+            # else:
+            #     upload_auth = False
         else:
             staff_list = []
-            upload_auth = False
+            # upload_auth = False
     else:
         staff_list = []
-        upload_auth = False
+        # upload_auth = False
 
-    return staff_list, upload_auth
+    return staff, staff_list
 
 
 if __name__ == "__main__":
@@ -171,5 +250,6 @@ if __name__ == "__main__":
         ENV_CONST = json.load(env)
 
     staff_tree = build_staff_tree(ENV_CONST)
-    user = staff_tree.find_staff("name", "王宝龙")
+    user = staff_tree.find_staff("name", "杨巍")
     print(user.name, user.position, user.oa_account, user.id)
+    print(get_user_auth("wangbaolong", 28752))

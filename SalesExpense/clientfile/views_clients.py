@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.shortcuts import render
-# from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required
 from .models import *
 from django.core.handlers.wsgi import WSGIRequest
 
@@ -156,17 +156,17 @@ COL_REINDEX = [
 ]
 
 
-# @login_required
-def clients(request: WSGIRequest, oa_account: str, eid: int) -> any:
+@login_required
+def clients(request: WSGIRequest) -> any:
+    
+    view_auth = ast.literal_eval(str(request.user.staff.desendants))
+        
+    print(view_auth)
     if request.method == "GET":
-        view_auth, upload_auth = get_user_auth(oa_account, eid)  # 权限范围
         record_n = get_clients(view_auth).count
-        request.session["upload_auth"] = upload_auth
-        request.session["view_auth"] = view_auth
+
         context = {
             "record_n": record_n,
-            "oa_account": oa_account,
-            "eid": eid,
         }
         return render(request, "clientfile/clients.html", context)
     else:
@@ -211,7 +211,7 @@ def clients(request: WSGIRequest, oa_account: str, eid: int) -> any:
         context = get_context_from_form(request)
 
         # 根据用户权限，前端参数，搜索关键字返回client objects
-        view_auth = ast.literal_eval(request.POST.get("view_auth"))
+        # view_auth = ast.literal_eval(request.POST.get("view_auth"))
         clients = get_clients(view_auth, context, search_key)
 
         # 排序
@@ -433,10 +433,13 @@ def import_excel(request):
                     return JsonResponse(context)
                 else:
                     if (
-                        dsm_auth(request.session["view_auth"], df["地区经理"].unique())[0] is False
+                        dsm_auth(request.session["view_auth"], df["地区经理"].unique())[0]
+                        is False
                     ):  # 权限检查，只能上传自己/下属dsm的数据
                         context["msg"] = "权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据" + str(
-                            dsm_auth(request.session["view_auth"], df[COL[3]].unique())[1]
+                            dsm_auth(request.session["view_auth"], df[COL[3]].unique())[
+                                1
+                            ]
                         )
                         return JsonResponse(context)
                     else:

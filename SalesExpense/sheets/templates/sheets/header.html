@@ -1,7 +1,7 @@
 {% load static %}
-{% url 'clientfile:clients'  oa_account=oa_account eid=eid as clients_url %}
-{% url 'clientfile:analysis'  oa_account=oa_account eid=eid as analysis_url %}
-{% url 'clientfile:history' oa_account=oa_account eid=eid as history_url %}
+{% url 'clientfile:clients' as clients_url %}
+{% url 'clientfile:analysis' as analysis_url %}
+{% url 'clientfile:history' as history_url %}
 {% comment %} {% url 'clientfile:groups' as groups_url %} {% endcomment %}
 {% comment %} {% url 'admin:index' as admin_url %} {% endcomment %}
 
@@ -22,14 +22,14 @@
 <!--            </div>-->
 <!--        </div>-->
 
-        <a href="{{ history_url }}" class="{% if request.get_full_path == history_url %}active red{% endif %} item">操作记录</a>
+        {% comment %} <a href="{{ history_url }}" class="{% if request.get_full_path == history_url %}active red{% endif %} item">操作记录</a> {% endcomment %}
         {% comment %} <a href="{{ admin_url }}" class="{% if request.get_full_path == admin_url %}active red{% endif %} item">后台管理</a> {% endcomment %}
 
     </div>
     <div class="right menu">
-        {% if oa_account %}
+        {% if request.user.username %}
             <div class="ui item">
-                您好，{{ oa_account }}
+                您好，{{ request.user.username }}
             </div>
         {% endif %}
         {% comment %} {%  if not request.user.username  %}

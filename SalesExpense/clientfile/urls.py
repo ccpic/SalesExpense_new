@@ -6,10 +6,10 @@ app_name = "clientfile"
 urlpatterns = [
     path(r"", RedirectView.as_view(url="/clientfile/clients")),
     path(
-        r"clients/<str:oa_account>/<int:eid>/", views_clients.clients, name="clients"
+        r"clients/", views_clients.clients, name="clients"
     ),  # 权限下所有客户
     path(
-        r"clients/search/<str:oa_account>/<int:eid>/<str:kw>",
+        r"clients/search/",
         views_clients.client_search,
         name="client_search",
     ),  # 客户搜索
@@ -20,11 +20,11 @@ urlpatterns = [
     path(
         r"export_clients/", views_clients.export_clients, name="export_clients"
     ),  # 导出档案记录
-    path(r"analysis/<str:oa_account>/<int:eid>/", views_analysis.analysis, name="analysis"),  # 分析现有档案
+    path(r"analysis/", views_analysis.analysis, name="analysis"),  # 分析现有档案
     path(
         r"ajax_chart", views_analysis.ajax_chart, name="ajax_chart"
     ),  # Ajax出表
-    path(r"history/<str:oa_account>/<int:eid>/", views_history.history, name="history"),  # 档案记录
+    path(r"history/", views_history.history, name="history"),  # 档案记录
 #     path(
 #         r"groups/export", views_groups.export_groups, name="export_groups"
 #     ),  # 导出客户事件记录

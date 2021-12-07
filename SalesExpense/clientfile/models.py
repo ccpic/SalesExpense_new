@@ -2,6 +2,28 @@ from django.db import models
 from django.conf import settings
 from django.db.models.query import QuerySet
 from django.db.models import Q, UniqueConstraint, Max
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+import json
+
+
+@receiver(post_save, sender=User)
+def create_staff(sender, instance, created, **kwargs):
+    if created:
+        Staff.objects.create(user=instance)
+
+
+class Staff(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=10)
+    position = models.CharField(max_length=30)
+    desendants = models.CharField(max_length=999)
+    def set_desendants(self, x):
+        self.desendants = json.dumps(x)
+
+    def get_desendants(self):
+        return json.loads(self.desendants)
 
 
 class SoftDeleteQuerySet(QuerySet):
