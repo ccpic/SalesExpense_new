@@ -31,22 +31,33 @@ UPLOAD_AUTH_POS = ["地区经理", "高级地区经理"]
 class AutomaticUserLoginMiddleware(MiddlewareMixin):
     def process_view(self, request, view_func, view_args, view_kwargs):
         if request.path.startswith(reverse("admin:index")):  # 此中间件不对admin页面生效
-            return None
+            pass
         else:
             if request.method == "GET":
-                # if AutomaticUserLoginMiddleware._is_user_authenticated(request):
-                #     auth.logout(request) # 如已登录先登出
+                username = request.GET.get("oa_account", None)
+                if AutomaticUserLoginMiddleware._is_user_authenticated(request): # 如已登录
+                    if username is None: # 如已登录且url不含querystring，则不干预
+                        pass
+                    else: # 如已登录url含querystring，检查已登录用户和querystring是否匹配，不匹配则重新检查权限
+                        if request.user.username != username:
+                            user = auth.authenticate(request)
+                            if user is None:
+                                return HttpResponseForbidden()
 
-                if not AutomaticUserLoginMiddleware._is_user_authenticated(request) or (
-                    (request.GET.get("oa_account") is not None)
-                    and (request.user.username != request.GET.get("oa_account"))
-                ):  # 未登录状态或登录名与url不符
-                    user = auth.authenticate(request)
-                    if user is None:
+                            request.user = user
+                            auth.login(request, user)
+                        else:
+                            pass 
+                else:
+                    if username is None: # 如未登录且url不含querystring，禁止访问
                         return HttpResponseForbidden()
+                    else:  # 如未登录url含querystring，根据querystring检查权限
+                        user = auth.authenticate(request)
+                        if user is None:
+                            return HttpResponseForbidden()
 
-                    request.user = user
-                    auth.login(request, user)
+                        request.user = user
+                        auth.login(request, user)
             else:
                 pass
 
@@ -242,7 +253,7 @@ def get_user_auth(oa_account: str, eid: int) -> tuple:  # 返回一个权限架�
             ENV_CONST = json.load(env)
         staff_tree = build_staff_tree(ENV_CONST)  # 组织架构
         cache.set("staff_tree", staff_tree, timeout=60 * 60 * 24)
-        
+
     staff = staff_tree.find_staff("oa_account", oa_account)
     if staff is not None:  # 如果用户的oa账号在组织架构内
         if staff.id == eid:  # oa必须和eid对应上

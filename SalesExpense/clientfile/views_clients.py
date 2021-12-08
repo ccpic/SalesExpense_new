@@ -164,7 +164,6 @@ COL_REINDEX = [
 def clients(request: WSGIRequest) -> any:
 
     user_auth = ast.literal_eval(str(request.user.staff.desendants))  # 获取权限范围
-    print(user_auth)
 
     if request.method == "GET":
         record_n = get_clients(user_auth).count

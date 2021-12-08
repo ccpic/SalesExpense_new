@@ -30,31 +30,7 @@ DSM客户档案管理
                 <a class="item" data-tab="management_rsp"><i class="paperclip icon"></i>管理分析-代表</a>
                 <a class="item" data-tab="client_cards"><i class="address card icon"></i>客户一览</a>
             </div>
-            <div class="ui tab segment active" data-tab="client_cards">
-
-                <h3 class="ui header">
-                    <div class="content">
-                        客户一览
-                        <div class="sub header">信息卡（按潜力排序）</div>
-                    </div>
-                </h3>
-                <!--            按-->
-                <!--            <div class="ui selection dropdown">-->
-                <!--              <input type="hidden" name="gender">-->
-                <!--              <i class="dropdown icon"></i>-->
-                <!--              <div class="default text">Gender</div>-->
-                <!--              <div class="menu">-->
-                <!--                <div class="item" data-value="1">Male</div>-->
-                <!--                <div class="item" data-value="0">Female</div>-->
-                <!--              </div>-->
-                <!--            </div>-->
-                <!--            排序-->
-                <div class="ui divider"></div>
-                <div id="client_cards">
-                    {% include 'clientfile/client_cards.html' %}
-                </div>
-            </div>
-            <div class="ui tab segment" data-tab="client_property">
+            <div class="ui tab segment active" data-tab="client_property">
                 {% include 'clientfile/property.html' %}
             </div>
             <div class="ui tab segment" data-tab="client_level">
@@ -133,6 +109,30 @@ DSM客户档案管理
                 <div class="ui divider"></div>
                 <div class="ui container" id='div_table_rsp'
                      style="width: 100%; overflow-x: scroll; overflow-y: hidden;">
+                </div>
+            </div>
+            <div class="ui tab segment" data-tab="client_cards">
+
+                <h3 class="ui header">
+                    <div class="content">
+                        客户一览
+                        <div class="sub header">信息卡（按潜力排序）</div>
+                    </div>
+                </h3>
+                <!--            按-->
+                <!--            <div class="ui selection dropdown">-->
+                <!--              <input type="hidden" name="gender">-->
+                <!--              <i class="dropdown icon"></i>-->
+                <!--              <div class="default text">Gender</div>-->
+                <!--              <div class="menu">-->
+                <!--                <div class="item" data-value="1">Male</div>-->
+                <!--                <div class="item" data-value="0">Female</div>-->
+                <!--              </div>-->
+                <!--            </div>-->
+                <!--            排序-->
+                <div class="ui divider"></div>
+                <div id="client_cards">
+                    {% include 'clientfile/client_cards.html' %}
                 </div>
             </div>
         </div>

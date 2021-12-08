@@ -7,11 +7,12 @@ from .views_clients import get_clients
 from datetime import datetime, timedelta
 from .models import Group, Client
 from .auth import get_user_auth
+import ast
 
 
-# @login_required()
+@login_required()
 def history(request: WSGIRequest, oa_account: str, eid: int):
-    user_auth = get_user_auth(oa_account, eid)[0]
+    user_auth = ast.literal_eval(str(request.user.staff.desendants))  # 获取权限范围
     clients_his = get_clients(user_auth, is_deleted=True)
     clients_his_n = clients_his.count()
     one_week_ago = datetime.today() - timedelta(days=7)

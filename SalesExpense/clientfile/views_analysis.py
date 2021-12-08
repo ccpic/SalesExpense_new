@@ -26,7 +26,6 @@ SERIES_LIMIT = 10  # 所有画图需要限制的系列数
 @login_required()
 def analysis(request: WSGIRequest):
     DISPLAY_LENGTH = 20
-    print(request.session)
     user_auth = ast.literal_eval(str(request.user.staff.desendants))
     context = get_context_from_form(request)
     clients = get_clients(user_auth, context)
