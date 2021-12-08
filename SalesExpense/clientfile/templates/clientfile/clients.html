@@ -68,7 +68,7 @@ DSM客户档案管理
         </div>
         <div class="content">
             {% if record_n > 0 %}
-            该动作会将本地Excel文件同步至服务器，服务器原有<span style="color: dodgerblue; ">{{ request.user.username }}</span>的<span
+            该动作会将本地Excel文件同步至服务器，服务器原有<span style="color: dodgerblue; ">{{ user.username }}</span>的<span
                 style="color: dodgerblue; ">{{ record_n }}</span>相关记录将被删除或覆盖
             {% else %}
             该动作会将本地Excel文件同步至服务器
@@ -141,7 +141,7 @@ DSM客户档案管理
                                 $("#msg").html(ret.msg);
                                 setTimeout(function () {
                                     $('#table').DataTable().ajax.reload(null,
-                                    false);
+                                        false);
                                 }, 1000);
                             } else {
                                 $("#msg").attr("class", "ui negative message");
@@ -223,7 +223,7 @@ DSM客户档案管理
 
     var urlParam = '{% url 'clientfile:clients' %}'
     var columnsParam = [{
-            title: "南北中国",
+            title: "南北东中国",
             data: "bu"
         },
         {

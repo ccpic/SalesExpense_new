@@ -44,7 +44,7 @@ pd.set_option("display.width", 5000)
 
 D_SEARCH_FIELD = {
     "省/自治区/直辖市": "province",
-    "南北中国": "bu",
+    "南北东中国": "bu",
     "区域": "rd",
     "大区": "rm",
     "地区经理": "dsm",
@@ -59,7 +59,7 @@ D_SEARCH_FIELD = {
 
 D_SELECT = {
     "省/自治区/直辖市": "province-select[]",
-    "南北中国": "bu-select[]",
+    "南北东中国": "bu-select[]",
     "区域": "rd-select[]",
     "大区": "rm-select[]",
     "地区经理": "dsm-select[]",
@@ -75,7 +75,7 @@ D_SELECT = {
 
 D_FIELD = {
     "省/自治区/直辖市": "province",
-    "南北中国": "bu",
+    "南北东中国": "bu",
     "区域": "rd",
     "大区": "rm",
     "地区经理": "dsm",
@@ -112,7 +112,7 @@ D_TRANSLATE = {
 }
 
 COL = [
-    "南北中国",
+    "南北东中国",
     "区域",
     "大区",
     "地区经理",
@@ -126,6 +126,7 @@ COL = [
     "客户姓名",
     "所在科室",
     "职称",
+    "客户\n联系电话",
     "月出诊次数（半天计）",
     "每半天\n门诊量",
     "相关病人\n比例(%)\n建议比例：40%-80%",
@@ -133,7 +134,7 @@ COL = [
 ]
 
 COL_REINDEX = [
-    "南北中国",
+    "南北东中国",
     "区域",
     "大区",
     "地区经理",
@@ -147,6 +148,7 @@ COL_REINDEX = [
     "客户姓名",
     "所在科室",
     "职称",
+    "联系电话",
     "月出诊次数（半天计）",
     "每半天门诊量",
     "相关病人比例(%)",
@@ -159,9 +161,9 @@ COL_REINDEX = [
 @login_required
 def clients(request: WSGIRequest) -> any:
 
-    user_auth = ast.literal_eval(str(request.user.staff.desendants))
-
+    user_auth = ast.literal_eval(str(request.user.staff.desendants))  # 获取权限范围
     print(user_auth)
+
     if request.method == "GET":
         record_n = get_clients(user_auth).count
 
@@ -381,9 +383,9 @@ def client_detail(request, id):
     return render(request, "clientfile/client_detail.html", context)
 
 
-# @login_required()
+@login_required()
 def export_clients(request):
-    user_auth = request.session["user_auth"]
+    user_auth = ast.literal_eval(str(request.user.staff.desendants))  # 获取权限范围
     df = get_df_clients(user_auth)
     excel_file = IO()
 
@@ -434,7 +436,8 @@ def import_excel(request):
                     return JsonResponse(context)
                 else:
                     if (
-                        dsm_auth([request.user.staff.name], df["地区经理"].unique())[0] is False
+                        dsm_auth([request.user.staff.name], df["地区经理"].unique())[0]
+                        is False
                     ):  # 权限检查，只能上传自己/下属dsm的数据
                         context["msg"] = "权限错误，只能上传自己的数据，你没有权限上传下列dsm的数据" + str(
                             dsm_auth([request.user.staff.name], df[COL[3]].unique())[1]
@@ -474,7 +477,7 @@ def validate(df):
     NullValidation = CustomElementValidation(lambda d: d is not np.nan, "该字段不能为空")
     schema = Schema(
         [
-            Column("南北中国", [InListValidation(list_bu)]),
+            Column("南北东中国", [InListValidation(list_bu)]),
             Column("区域", [InListValidation(list_rd)]),
             Column(
                 "大区",
@@ -531,6 +534,14 @@ def validate(df):
             ),
             Column("所在科室", [InListValidation(list_dept)]),
             Column("职称", [InListValidation(list_title)]),
+            Column(
+                "客户\n联系电话",
+                [
+                    MatchesPatternValidation(
+                        "^((13[0-9])|(14[5-9])|(15([0-3]|[5-9]))|(16[6-7])|(17[1-8])|(18[0-9])|(19[1|3])|(19[5|6])|(19[8|9]))\d{8}$"
+                    )
+                ],
+            ),
             Column("月出诊次数（半天计）", [CanConvertValidation(int), InRangeValidation(0, 63)]),
             Column(
                 "每半天\n门诊量",
@@ -680,8 +691,9 @@ def get_clients(
     return clients
 
 
-def client_search(response: WSGIRequest, oa_account: str, eid: int, kw: str) -> json:
-    user_auth = get_user_auth(oa_account, eid)
+@login_required
+def client_search(request: WSGIRequest, kw: str) -> json:
+    user_auth = ast.literal_eval(str(request.user.staff.desendants))  # 获取权限范围
     clients_obj = get_clients(user_auth=user_auth, name_and_hosp=kw)
     print("search")
     try:
@@ -737,6 +749,7 @@ def get_df_clients(
                 "name",
                 "dept",
                 "title",
+                "phone",
                 "consulting_times",
                 "patients_half_day",
                 "target_prop",
@@ -758,7 +771,7 @@ def get_df_clients(
             lambda x: "L" if x < 80 else ("M" if x < 200 else "H")
         )
         # df_new['hp_decile'] = django_method_to_df(clients)
-
+        print(df_new.columns)
         df_new.columns = COL_REINDEX
         return df_new
     else:
@@ -792,7 +805,7 @@ def import_record(request: WSGIRequest, df: pd.DataFrame):
     df["是否双call"] = df["是否双call"].map(D_MAP)
     df["开户进展"] = df["开户进展"].map(D_MAP)
 
-    Client.objects.filter(dsm__in=df["地区经理"].unique()).delete()  # 删除当前DSM名下的记录
+    Client.objects.filter(pub_user=request.user).delete()  # 删除当前DSM名下的记录
 
     max_pub_id_entry = Client.objects.max_pub_id()  # 当前最大（晚更新）的pub_id
     if max_pub_id_entry is None:
@@ -816,10 +829,11 @@ def import_record(request: WSGIRequest, df: pd.DataFrame):
             name=row[COL[11]],
             dept=row[COL[12]],
             title=row[COL[13]],
-            consulting_times=row[COL[14]],
-            patients_half_day=row[COL[15]],
-            target_prop=row[COL[16]],
-            note=row[COL[17]],
+            phone=row[COL[14]],
+            consulting_times=row[COL[15]],
+            patients_half_day=row[COL[16]],
+            target_prop=row[COL[17]],
+            note=row[COL[18]],
             pub_id=pub_id,
             pub_user=request.user,
         )
