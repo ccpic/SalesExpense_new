@@ -158,12 +158,12 @@ COL_REINDEX = [
 
 @login_required
 def clients(request: WSGIRequest) -> any:
-    
-    view_auth = ast.literal_eval(str(request.user.staff.desendants))
-        
-    print(view_auth)
+
+    user_auth = ast.literal_eval(str(request.user.staff.desendants))
+
+    print(user_auth)
     if request.method == "GET":
-        record_n = get_clients(view_auth).count
+        record_n = get_clients(user_auth).count
 
         context = {
             "record_n": record_n,
@@ -211,8 +211,8 @@ def clients(request: WSGIRequest) -> any:
         context = get_context_from_form(request)
 
         # 根据用户权限，前端参数，搜索关键字返回client objects
-        # view_auth = ast.literal_eval(request.POST.get("view_auth"))
-        clients = get_clients(view_auth, context, search_key)
+        # user_auth = ast.literal_eval(request.POST.get("user_auth"))
+        clients = get_clients(user_auth, context, search_key)
 
         # 排序
         result_length = clients.count()
@@ -254,11 +254,11 @@ def clients(request: WSGIRequest) -> any:
             clients = paginator.page(paginator.num_pages)
         data = []
         for item in clients:
-            if item.potential_level() == 1:
+            if item.potential_level == 1:
                 potential_level = "L"
-            elif item.potential_level() == 2:
+            elif item.potential_level == 2:
                 potential_level = "M"
-            elif item.potential_level() == 3:
+            elif item.potential_level == 3:
                 potential_level = "H"
             row = {
                 "bu": item.bu,
@@ -280,7 +280,7 @@ def clients(request: WSGIRequest) -> any:
                 "patients_half_day": item.patients_half_day,
                 "target_prop": "{:.0%}".format(item.target_prop / 100),
                 "note": item.note,
-                "monthly_target_patients": item.monthly_patients(),
+                "monthly_target_patients": item.monthly_patients,
                 "potential_level": potential_level,
             }
             data.append(row)
@@ -383,8 +383,8 @@ def client_detail(request, id):
 
 # @login_required()
 def export_clients(request):
-    view_auth = request.session["view_auth"]
-    df = get_df_clients(view_auth)
+    user_auth = request.session["user_auth"]
+    df = get_df_clients(user_auth)
     excel_file = IO()
 
     xlwriter = pd.ExcelWriter(excel_file, engine="xlsxwriter")
@@ -408,11 +408,11 @@ def export_clients(request):
     return response
 
 
-# @login_required()
+@login_required()
 def import_excel(request):
     SHEET_NAME = "客户档案"
     context = {"code": 0, "msg": ""}
-    view_auth = ast.literal_eval(str(request.user.staff.desendants))
+    user_auth = ast.literal_eval(str(request.user.staff.desendants))
     if request.method == "POST":
         excel_file = request.FILES.get("attachmentName")
         if excel_file is None:  # 检查没有选择本地文件就直接点击上传的错误
@@ -434,13 +434,10 @@ def import_excel(request):
                     return JsonResponse(context)
                 else:
                     if (
-                        dsm_auth(view_auth, df["地区经理"].unique())[0]
-                        is False
+                        dsm_auth([request.user.staff.name], df["地区经理"].unique())[0] is False
                     ):  # 权限检查，只能上传自己/下属dsm的数据
-                        context["msg"] = "权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据" + str(
-                            dsm_auth(view_auth, df[COL[3]].unique())[
-                                1
-                            ]
+                        context["msg"] = "权限错误，只能上传自己的数据，你没有权限上传下列dsm的数据" + str(
+                            dsm_auth([request.user.staff.name], df[COL[3]].unique())[1]
                         )
                         return JsonResponse(context)
                     else:
@@ -451,7 +448,7 @@ def import_excel(request):
                             return JsonResponse(context)
                         else:
                             try:
-                                import_record(df)
+                                import_record(request, df)
                             except IntegrityError as e:
                                 context[
                                     "msg"
@@ -671,12 +668,13 @@ def get_clients(
     # staffs = Staff.objects.get(name=user).get_descendants(include_self=True)
     # staff_list = [i.name for i in staffs]
 
-    clients = (
-        clientset.filter(rd__in=user_auth)
-        | clientset.filter(rm__in=user_auth)
-        | clientset.filter(dsm__in=user_auth)
-    )
+    # clients = (
+    #     clientset.filter(rd__in=user_auth)
+    #     | clientset.filter(rm__in=user_auth)
+    #     | clientset.filter(dsm__in=user_auth)
+    # )
 
+    clients = clientset.filter(pub_user__username__in=user_auth)  # 只能浏览自己和下属上传的档案
     clients = clients.filter(or_condiction)
 
     return clients
@@ -789,7 +787,7 @@ def df_to_table(df, ignore_columns=None):
         return "无记录"
 
 
-def import_record(df):
+def import_record(request: WSGIRequest, df: pd.DataFrame):
     df = df.replace({np.nan: None})
     df["是否双call"] = df["是否双call"].map(D_MAP)
     df["开户进展"] = df["开户进展"].map(D_MAP)
@@ -823,6 +821,7 @@ def import_record(df):
             target_prop=row[COL[16]],
             note=row[COL[17]],
             pub_id=pub_id,
+            pub_user=request.user,
         )
 
 

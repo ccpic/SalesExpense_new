@@ -62,7 +62,7 @@ class AuthenticationBackend(ModelBackend):
         if staff_list is None:
             return None
 
-        request.session["view_auth"] = staff_list
+        request.session["user_auth"] = staff_list
 
         try:
             user = User.objects.get(username=username)
@@ -228,22 +228,22 @@ def get_user_auth(oa_account: str, eid: int) -> tuple:  # 返回一个权限架�
     with open("./env.json", "r", encoding="utf-8") as env:
         ENV_CONST = json.load(env)
 
-    view_auth = cache.get_many(["staff", "staff_list"])
-    print(view_auth)
-    if view_auth == {}:
+    user_auth = cache.get_many(["staff", "staff_list"])
+    print(user_auth)
+    if user_auth == {}:
         staff_tree = build_staff_tree(ENV_CONST)  # 组织架构
         staff = staff_tree.find_staff("oa_account", oa_account)
         if staff is not None:  # 如果用户的oa账号在组织架构内
             if staff.id == eid:  # oa必须和eid对应上
                 staff_list = staff.get_descendants_list(attr="oa_account")
-                view_auth = {"staff": staff, "staff_list": staff_list}
-                cache.set_many(view_auth, timeout=60*60*24)
+                user_auth = {"staff": staff, "staff_list": staff_list}
+                cache.set_many(user_auth, timeout=60 * 60 * 24)
             else:
                 staff_list = None
         else:
             staff_list = None
 
-    return view_auth["staff"], view_auth["staff_list"]
+    return user_auth["staff"], user_auth["staff_list"]
 
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ from .auth import get_user_auth
 
 # @login_required()
 def history(request: WSGIRequest, oa_account: str, eid: int):
-    view_auth = get_user_auth(oa_account, eid)[0]
-    clients_his = get_clients(view_auth, is_deleted=True)
+    user_auth = get_user_auth(oa_account, eid)[0]
+    clients_his = get_clients(user_auth, is_deleted=True)
     clients_his_n = clients_his.count()
     one_week_ago = datetime.today() - timedelta(days=7)
     clients_his_latest_week = clients_his.filter(pub_date__gte=one_week_ago)

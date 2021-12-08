@@ -177,7 +177,7 @@ class Client(SoftDeletableModel):
     dept = models.CharField(max_length=4, choices=DEPT_CHOICES, verbose_name='所在科室')
     name = models.CharField(max_length=10, verbose_name='客户姓名')
     title = models.CharField(max_length=10, choices=TITLE_CHOICES, verbose_name='职称')
-    # phone = models.IntegerField(verbose_name='客户联系电话', null=True, blank=True)
+    phone = models.IntegerField(verbose_name='客户联系电话', null=True, blank=True)
     consulting_times = models.IntegerField(verbose_name='月出诊次数（半天计）')
     patients_half_day = models.IntegerField(verbose_name='每半天门诊量')
     target_prop = models.IntegerField(verbose_name='相关病人比例(%)')
@@ -185,7 +185,9 @@ class Client(SoftDeletableModel):
     note = models.CharField(max_length=100, verbose_name='备注', null=True, blank=True)
     pub_date = models.DateTimeField(verbose_name='上传日期',auto_now=True)
     pub_id = models.IntegerField(verbose_name='上传编号')
-
+    pub_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    
     class Meta:
         verbose_name = '客户档案'
         verbose_name_plural = '客户档案'
@@ -205,9 +207,9 @@ class Client(SoftDeletableModel):
 
     @cached_property
     def potential_level(self):
-        if self.monthly_patients() < 80:
+        if self.monthly_patients < 80:
             return 1
-        elif self.monthly_patients() < 200:
+        elif self.monthly_patients < 200:
             return 2
         else:
             return 3

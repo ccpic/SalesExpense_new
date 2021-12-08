@@ -27,9 +27,9 @@ SERIES_LIMIT = 10  # 所有画图需要限制的系列数
 def analysis(request: WSGIRequest):
     DISPLAY_LENGTH = 20
     print(request.session)
-    view_auth = ast.literal_eval(str(request.user.staff.desendants))
+    user_auth = ast.literal_eval(str(request.user.staff.desendants))
     context = get_context_from_form(request)
-    clients = get_clients(view_auth, context)
+    clients = get_clients(user_auth, context)
     clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
     paginator = Paginator(clients, DISPLAY_LENGTH)
     page = request.POST.get("page")
@@ -206,18 +206,18 @@ def ajax_chart(request):
     df = get_df_clients(ast.literal_eval(str(request.user.staff.desendants)), context)
 
     context = {
-        'bar_line_potential_dist': get_chart(df, 'bar_line_potential_dist'),
-        'pie_potential_level':get_chart(df,'bar_line_potential_dist' ),
-        'pie_dept':get_chart(df, 'bar_line_potential_dist'),
-        'bar_dept_potential':get_chart(df, 'bar_line_potential_dist'),
-        'pie_hpaccess':get_chart(df, 'bar_line_potential_dist'),
-        'bar_hpaccess_potential':get_chart(df, 'bar_line_potential_dist'),
-        'pie_hplevel':get_chart(df,'bar_line_potential_dist' ),
-        'bar_hplevel_potential':get_chart(df,'bar_line_potential_dist' ),
-        'pie_title':get_chart(df,'bar_line_potential_dist' ),
-        'bar_title_potential':get_chart(df,'bar_line_potential_dist' ),
+        "bar_line_potential_dist": get_chart(df, "bar_line_potential_dist"),
+        "pie_potential_level": get_chart(df, "bar_line_potential_dist"),
+        "pie_dept": get_chart(df, "bar_line_potential_dist"),
+        "bar_dept_potential": get_chart(df, "bar_line_potential_dist"),
+        "pie_hpaccess": get_chart(df, "bar_line_potential_dist"),
+        "bar_hpaccess_potential": get_chart(df, "bar_line_potential_dist"),
+        "pie_hplevel": get_chart(df, "bar_line_potential_dist"),
+        "bar_hplevel_potential": get_chart(df, "bar_line_potential_dist"),
+        "pie_title": get_chart(df, "bar_line_potential_dist"),
+        "bar_title_potential": get_chart(df, "bar_line_potential_dist"),
         # 'treemap_rsp_hosp_client':get_chart(df,'bar_line_potential_dist' ),
-        'bar_dsm':get_chart(df, 'bar_line_potential_dist'),
+        "bar_dsm": get_chart(df, "bar_line_potential_dist"),
         "table_dsm": get_table(df, "地区经理", "table_dsm"),
         "table_rsp": get_table(df, "负责代表", "table_rsp"),
     }
