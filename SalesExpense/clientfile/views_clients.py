@@ -110,7 +110,7 @@ D_TRANSLATE = {
     "contains values that are not unique": "含有和该列其他单元格重复的数据",
     "cannot be converted to type": "必须为整数",
     "was not in the range": "超出了该字段允许的范围",
-    'does not match the pattern "^((13[0-9])|(14[5-9])|(15([0-3]|[5-9]))|(16[6-7])|(17[1-8])|(18[0-9])|(19[1|3])|(19[5|6])|(19[8|9]))\d{8}$"': "与中国大陆手机号码样式不匹配，如确实为此号码，请号码列保持为空，将此号码填写入备注中",
+    'does not match the pattern "^$|^((13[0-9])|(14[5-9])|(15([0-3]|[5-9]))|(16[6-7])|(17[1-8])|(18[0-9])|(19[1|3])|(19[5|6])|(19[8|9]))\d{8}$"': "与中国大陆手机号码样式不匹配，如确实为此号码，请号码列保持为空，将此号码填写入备注中",
 }
 
 COL = [
@@ -467,6 +467,9 @@ def import_excel(request):
 
 
 def validate(df):
+    df["客户\n联系电话"] = df["客户\n联系电话"].astype("Int64").astype(str)  # 客户电话转为整形再转为字符串
+    df["客户\n联系电话"] = df["客户\n联系电话"].replace("<NA>", "")  # 客户电话nan值转为空字符串
+
     d_error = {}
     list_bu = [x[0] for x in BU_CHOICES]
     list_rd = [x[0] for x in RD_CHOICES]
@@ -540,7 +543,7 @@ def validate(df):
                 "客户\n联系电话",
                 [
                     MatchesPatternValidation(
-                        "^((13[0-9])|(14[5-9])|(15([0-3]|[5-9]))|(16[6-7])|(17[1-8])|(18[0-9])|(19[1|3])|(19[5|6])|(19[8|9]))\d{8}$"
+                        "^$|^((13[0-9])|(14[5-9])|(15([0-3]|[5-9]))|(16[6-7])|(17[1-8])|(18[0-9])|(19[1|3])|(19[5|6])|(19[8|9]))\d{8}$"
                     )
                 ],
             ),
@@ -568,6 +571,7 @@ def validate(df):
             Column("备注"),
         ]
     )
+
     errors = schema.validate(df.loc[:, COL])
     for error in errors:
         str_warning = str(error)
@@ -591,6 +595,9 @@ def validate(df):
     d_error = {**d_error, **check_inconsist(df, "医院全称", "开户进展", "left")}
 
     d_error = {**d_error, **check_hplevel_with_dept(df)}  # 检查医院级别和所在科室是否出现矛盾
+    
+    df["客户\n联系电话"] = df["客户\n联系电话"].replace("", np.nan) # 还原电话号码空值为NaN，否则导入数据库会出问题
+    
     return d_error
 
 

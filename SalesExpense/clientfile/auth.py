@@ -1,12 +1,10 @@
 import sys
 import os
-
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if path not in sys.path:
     sys.path.append(path)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "SalesExpense.settings")
 import django
-
 django.setup()
 from pandas.core.arrays import integer
 from sqlalchemy import create_engine
@@ -277,6 +275,6 @@ if __name__ == "__main__":
         ENV_CONST = json.load(env)
 
     staff_tree = build_staff_tree(ENV_CONST)
-    user = staff_tree.find_staff("name", "王清")
+    user = staff_tree.find_staff("name", "程涛")
     print(user.name, user.position, user.oa_account, user.id)
     print(get_user_auth("wangbaolong", 28752))
