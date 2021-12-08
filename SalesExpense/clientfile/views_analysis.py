@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from django.core.handlers.wsgi import WSGIRequest
 from .auth import get_user_auth
 
-# from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required
 from sheets.models import Staff
 from sheets.views import build_formatters_by_col
 import pandas as pd
@@ -18,16 +18,16 @@ from .views_clients import (
     D_FIELD,
     D_SELECT,
 )
+import ast
 
 SERIES_LIMIT = 10  # 所有画图需要限制的系列数
 
 
-# @login_required()
-def analysis(request: WSGIRequest, oa_account: str, eid: int):
+@login_required()
+def analysis(request: WSGIRequest):
     DISPLAY_LENGTH = 20
     print(request.session)
-    view_auth = get_user_auth(oa_account, eid)[0]
-    request.session["view_auth"] = view_auth
+    view_auth = ast.literal_eval(str(request.user.staff.desendants))
     context = get_context_from_form(request)
     clients = get_clients(view_auth, context)
     clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
@@ -44,8 +44,6 @@ def analysis(request: WSGIRequest, oa_account: str, eid: int):
         "num_pages": paginator.num_pages,
         "record_n": paginator.count,
         "display_length": DISPLAY_LENGTH,
-        "oa_account": oa_account,
-        "eid": eid,
     }
     if request.is_ajax():
         return render(request, "clientfile/client_cards.html", context)
@@ -205,7 +203,7 @@ def get_chart(df: pd.DataFrame, chart: str) -> str:
 
 def ajax_chart(request):
     context = get_context_from_form(request)
-    df = get_df_clients(request.session["view_auth"], context)
+    df = get_df_clients(ast.literal_eval(str(request.user.staff.desendants)), context)
 
     context = {
         'bar_line_potential_dist': get_chart(df, 'bar_line_potential_dist'),

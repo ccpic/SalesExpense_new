@@ -18,15 +18,16 @@ UPLOAD_AUTH_POS = ["地区经理", "高级地区经理"]
 
 class AutomaticUserLoginMiddleware(MiddlewareMixin):
     def process_view(self, request, view_func, view_args, view_kwargs):
-        if request.path.startswith(reverse('admin:index')): # 此中间件不对admin页面生效
+        if request.path.startswith(reverse("admin:index")):  # 此中间件不对admin页面生效
             return None
         else:
             if request.method == "GET":
-                username = request.GET.get("oa_account")
                 # if AutomaticUserLoginMiddleware._is_user_authenticated(request):
                 #     auth.logout(request) # 如已登录先登出
+
                 if not AutomaticUserLoginMiddleware._is_user_authenticated(request) or (
-                    request.user.username != username
+                    (request.GET.get("oa_account") is not None)
+                    and (request.user.username != request.GET.get("oa_account"))
                 ):  # 未登录状态或登录名与url不符
                     user = auth.authenticate(request)
                     if user is None:
@@ -40,6 +41,7 @@ class AutomaticUserLoginMiddleware(MiddlewareMixin):
     @staticmethod
     def _is_user_authenticated(request):
         user = request.user
+        print(user, user.is_authenticated)
         return user and user.is_authenticated
 
 
@@ -73,7 +75,7 @@ class AuthenticationBackend(ModelBackend):
         user.staff.position = staff.position
         user.staff.desendants = staff_list
         user.staff.save()
-        
+
         if staff.position in UPLOAD_AUTH_POS:
             group_dsm = Group.objects.get(name="地区经理")
             if user.groups.filter(name="地区经理").exists() is False:

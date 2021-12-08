@@ -412,6 +412,7 @@ def export_clients(request):
 def import_excel(request):
     SHEET_NAME = "客户档案"
     context = {"code": 0, "msg": ""}
+    view_auth = ast.literal_eval(str(request.user.staff.desendants))
     if request.method == "POST":
         excel_file = request.FILES.get("attachmentName")
         if excel_file is None:  # 检查没有选择本地文件就直接点击上传的错误
@@ -433,11 +434,11 @@ def import_excel(request):
                     return JsonResponse(context)
                 else:
                     if (
-                        dsm_auth(request.session["view_auth"], df["地区经理"].unique())[0]
+                        dsm_auth(view_auth, df["地区经理"].unique())[0]
                         is False
                     ):  # 权限检查，只能上传自己/下属dsm的数据
                         context["msg"] = "权限错误，只能上传自己/下属dsm的数据，你没有权限上传下列dsm的数据" + str(
-                            dsm_auth(request.session["view_auth"], df[COL[3]].unique())[
+                            dsm_auth(view_auth, df[COL[3]].unique())[
                                 1
                             ]
                         )
