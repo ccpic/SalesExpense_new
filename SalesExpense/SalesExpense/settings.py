@@ -48,11 +48,12 @@ INSTALLED_APPS = [
 ]
 
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.memcached.MemcachedCache",
-        "LOCATION": "0.0.0.0:8000",
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'cache',
     }
 }
+
 USER_AGENTS_CACHE = "default"
 
 

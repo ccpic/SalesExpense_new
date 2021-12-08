@@ -11,6 +11,8 @@ from django.contrib import auth
 from django.contrib.auth.middleware import MiddlewareMixin
 from django.http import HttpResponseForbidden
 from django.urls import reverse
+from django.core.cache import cache
+
 
 SALES_POS = ["高级地区经理", "销售总监", "大区经理", "地区经理", "大区副总监", "高级大区经理", "区域销售总监", "区域销售副总监"]
 UPLOAD_AUTH_POS = ["地区经理", "高级地区经理"]
@@ -57,7 +59,7 @@ class AuthenticationBackend(ModelBackend):
         # 调用自定义get_user_auth方法检查权限
         staff, staff_list = get_user_auth(username, password)
         print(staff_list)
-        if staff_list == []:
+        if staff_list is None:
             return None
 
         request.session["view_auth"] = staff_list
@@ -225,23 +227,23 @@ def get_dict_hr(ENV_CONST: dict) -> dict:
 def get_user_auth(oa_account: str, eid: int) -> tuple:  # 返回一个权限架构下所有姓名的tuple
     with open("./env.json", "r", encoding="utf-8") as env:
         ENV_CONST = json.load(env)
-    staff_tree = build_staff_tree(ENV_CONST)  # 组织架构
-    staff = staff_tree.find_staff("oa_account", oa_account)
-    if staff is not None:  # 如果用户的oa账号在组织架构内
-        if staff.id == eid:  # oa必须和eid对应上
-            staff_list = staff.get_descendants_list(attr="name")
-            # if staff.position in UPLOAD_AUTH_POS:  # 如果登录用户的岗位有上传权限
-            #     upload_auth = True
-            # else:
-            #     upload_auth = False
-        else:
-            staff_list = []
-            # upload_auth = False
-    else:
-        staff_list = []
-        # upload_auth = False
 
-    return staff, staff_list
+    view_auth = cache.get_many(["staff", "staff_list"])
+    print(view_auth)
+    if view_auth == {}:
+        staff_tree = build_staff_tree(ENV_CONST)  # 组织架构
+        staff = staff_tree.find_staff("oa_account", oa_account)
+        if staff is not None:  # 如果用户的oa账号在组织架构内
+            if staff.id == eid:  # oa必须和eid对应上
+                staff_list = staff.get_descendants_list(attr="oa_account")
+                view_auth = {"staff": staff, "staff_list": staff_list}
+                cache.set_many(view_auth, timeout=60*60*24)
+            else:
+                staff_list = None
+        else:
+            staff_list = None
+
+    return view_auth["staff"], view_auth["staff_list"]
 
 
 if __name__ == "__main__":
