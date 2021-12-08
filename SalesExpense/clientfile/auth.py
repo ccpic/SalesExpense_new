@@ -1,3 +1,13 @@
+import sys
+import os
+
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if path not in sys.path:
+    sys.path.append(path)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "SalesExpense.settings")
+import django
+
+django.setup()
 from pandas.core.arrays import integer
 from sqlalchemy import create_engine
 import pyodbc
@@ -225,35 +235,37 @@ def get_dict_hr(ENV_CONST: dict) -> dict:
 
 
 def get_user_auth(oa_account: str, eid: int) -> tuple:  # 返回一个权限架构下所有姓名的tuple
-    with open("./env.json", "r", encoding="utf-8") as env:
-        ENV_CONST = json.load(env)
-
-    user_auth = cache.get_many(["staff", "staff_list"])
-    print(user_auth)
-    if user_auth == {}:
+    staff_tree = cache.get("staff_tree", None)
+    print(staff_tree)
+    if staff_tree is None:
+        with open("./env.json", "r", encoding="utf-8") as env:
+            ENV_CONST = json.load(env)
         staff_tree = build_staff_tree(ENV_CONST)  # 组织架构
-        staff = staff_tree.find_staff("oa_account", oa_account)
-        if staff is not None:  # 如果用户的oa账号在组织架构内
-            if staff.id == eid:  # oa必须和eid对应上
-                staff_list = staff.get_descendants_list(attr="oa_account")
-                user_auth = {"staff": staff, "staff_list": staff_list}
-                cache.set_many(user_auth, timeout=60 * 60 * 24)
-            else:
-                staff_list = None
+        cache.set("staff_tree", staff_tree, timeout=60 * 60 * 24)
+        
+    staff = staff_tree.find_staff("oa_account", oa_account)
+    if staff is not None:  # 如果用户的oa账号在组织架构内
+        if staff.id == eid:  # oa必须和eid对应上
+            staff_list = staff.get_descendants_list(attr="oa_account")
         else:
             staff_list = None
+    else:
+        staff_list = None
 
-    return user_auth["staff"], user_auth["staff_list"]
+    return staff, staff_list
 
 
 if __name__ == "__main__":
+    import sys
+
+    print(sys.path)
     # df = get_df_hr()
     # df = df.loc[:, ["eid", "直属上级id", "姓名"]]
     # print(df["岗位名称"].unique())
-    with open("../env.json", "r", encoding="utf-8") as env:
+    with open("./env.json", "r", encoding="utf-8") as env:
         ENV_CONST = json.load(env)
 
     staff_tree = build_staff_tree(ENV_CONST)
-    user = staff_tree.find_staff("name", "杨巍")
+    user = staff_tree.find_staff("name", "王清")
     print(user.name, user.position, user.oa_account, user.id)
     print(get_user_auth("wangbaolong", 28752))
