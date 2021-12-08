@@ -30,7 +30,7 @@ def analysis(request: WSGIRequest):
     user_auth = ast.literal_eval(str(request.user.staff.desendants))
     context = get_context_from_form(request)
     clients = get_clients(user_auth, context)
-    clients = sorted(clients, key=lambda p: p.monthly_patients(), reverse=True)
+    clients = sorted(clients, key=lambda p: p.monthly_patients, reverse=True)
     paginator = Paginator(clients, DISPLAY_LENGTH)
     page = request.POST.get("page")
     try:

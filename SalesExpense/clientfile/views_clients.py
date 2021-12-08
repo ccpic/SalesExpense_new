@@ -25,6 +25,7 @@ from pandas_schema.validation import (
     InListValidation,
     CustomElementValidation,
     IsDistinctValidation,
+    CustomSeriesValidation,
 )
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core import serializers
@@ -109,6 +110,7 @@ D_TRANSLATE = {
     "contains values that are not unique": "含有和该列其他单元格重复的数据",
     "cannot be converted to type": "必须为整数",
     "was not in the range": "超出了该字段允许的范围",
+    'does not match the pattern "^((13[0-9])|(14[5-9])|(15([0-3]|[5-9]))|(16[6-7])|(17[1-8])|(18[0-9])|(19[1|3])|(19[5|6])|(19[8|9]))\d{8}$"': "与中国大陆手机号码样式不匹配，如确实为此号码，请号码列保持为空，将此号码填写入备注中",
 }
 
 COL = [
@@ -530,6 +532,7 @@ def validate(df):
                     LeadingWhitespaceValidation(),
                     TrailingWhitespaceValidation(),
                     IsDistinctValidation(),
+                    NullValidation,
                 ],
             ),
             Column("所在科室", [InListValidation(list_dept)]),
@@ -554,7 +557,14 @@ def validate(df):
             ),
             Column(
                 "相关病人\n比例(%)\n建议比例：40%-80%",
-                [CanConvertValidation(int), InRangeValidation(0, 101)],
+                [
+                    CanConvertValidation(int),
+                    InRangeValidation(0, 101),
+                    CustomSeriesValidation(
+                        lambda s: ~s.between(0, 1, inclusive="neither"),
+                        "本列请不要填小数或百分比（如想表达相关病人比例为40%，请填40）",
+                    ),
+                ],
             ),
             Column("备注"),
         ]
