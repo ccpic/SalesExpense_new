@@ -9,7 +9,7 @@
     <div class="ui container">
         <div href="#" class="header item">
             <img class="logo" src="{% static 'assets/images/logo.png' %}">
-            DSM数据管理
+            客户档案管理
         </div>
         <a href="{{ clients_url }}" class="{% if request.get_full_path == clients_url %}active red{% endif %} item">档案管理</a>
         <a href="{{ analysis_url }}"  class="{% if request.get_full_path == analysis_url %}active red{% endif %} item">档案分析</a>

@@ -232,17 +232,17 @@ def clients(request: WSGIRequest) -> any:
                 )
         elif sort_column == 14:
             if sort_order == "asc":
-                clients = sorted(clients, key=lambda a: a.monthly_patients())
+                clients = sorted(clients, key=lambda a: a.monthly_patients)
             elif sort_order == "desc":
                 clients = sorted(
-                    clients, key=lambda a: a.monthly_patients(), reverse=True
+                    clients, key=lambda a: a.monthly_patients, reverse=True
                 )
         elif sort_column == 15:
             if sort_order == "asc":
-                clients = sorted(clients, key=lambda a: a.potential_level())
+                clients = sorted(clients, key=lambda a: a.potential_level)
             elif sort_order == "desc":
                 clients = sorted(
-                    clients, key=lambda a: a.potential_level(), reverse=True
+                    clients, key=lambda a: a.potential_level, reverse=True
                 )
 
         # 对list进行分页
@@ -295,10 +295,10 @@ def clients(request: WSGIRequest) -> any:
         return HttpResponse(json.dumps(dataTable, ensure_ascii=False))
 
 
-# @login_required()
+@login_required()
 def client_detail(request, id):
     client = Client.objects.get(pk=id)
-    client_monthly_patients = client.monthly_patients()
+    client_monthly_patients = client.monthly_patients
     groups = Group.objects.filter(clients__pk=id)
 
     # 全国潜力分位
@@ -358,7 +358,7 @@ def client_detail(request, id):
         client.id
         for client in clients_same_dsm
         if client_monthly_patients_lb
-        < client.monthly_patients()
+        < client.monthly_patients
         < client_monthly_patients_ub
     ]
     clients_related = Client.objects.filter(id__in=related_ids)
@@ -890,6 +890,6 @@ def get_pct_rank(value, queryset_clients):
     """计算潜力在queryset档案中的百分位排名"""
     list_potential = []
     for client in queryset_clients:
-        list_potential.append(client.monthly_patients())
+        list_potential.append(client.monthly_patients)
     pct_rank = stats.percentileofscore(list_potential, value, kind="strict") / 100
     return pct_rank
