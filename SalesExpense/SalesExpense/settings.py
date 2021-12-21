@@ -48,9 +48,9 @@ INSTALLED_APPS = [
 ]
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'cache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "cache",
     }
 }
 
@@ -110,16 +110,28 @@ WSGI_APPLICATION = "SalesExpense.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": "D:\data.db",
+#         "OPTIONS": {
+#             "timeout": 20,
+#         },
+#     },
+# }
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "D:\data.db",
+        "NAME": "dsm/mi",
+        "ENGINE": "sql_server.pyodbc",
+        "HOST": "192.168.10.139",
+        "USER": "dsmsys",
+        "PASSWORD": "dsm!2021",
         "OPTIONS": {
+            "driver": "ODBC Driver 17 for SQL Server",
             "timeout": 20,
         },
-    },
+    }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
