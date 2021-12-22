@@ -133,8 +133,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-SalesExpense/clientfile/migrations/
-SalesExpense/static/
+dsm/clientfile/migrations/
+dsm/static/
 
 *.csv
 *.xlsx

@@ -1,0 +1,63 @@
+{% load static %}
+{% url 'clientfile:clients' as clients_url %}
+{% url 'clientfile:analysis' as analysis_url %}
+{% url 'clientfile:history' as history_url %}
+{% comment %} {% url 'clientfile:groups' as groups_url %} {% endcomment %}
+{% comment %} {% url 'admin:index' as admin_url %} {% endcomment %}
+
+<div class="ui large top fixed inverted menu" id="nav_menu">
+    <div class="ui container">
+        <div href="#" class="header item">
+            <img class="logo" src="{% static 'assets/images/logo.png' %}">
+            客户档案管理
+        </div>
+        <a href="{{ clients_url }}" class="{% if request.get_full_path == clients_url %}active red{% endif %} item">档案管理</a>
+        <a href="{{ analysis_url }}"  class="{% if request.get_full_path == analysis_url %}active red{% endif %} item">档案分析</a>
+        {% comment %} <a href="{{ groups_url }}"  class="{% if request.get_full_path == groups_url %}active red{% endif %} item">客户分组事件</a> {% endcomment %}
+        {% comment %} <a href="{{ history_url }}" class="{% if request.get_full_path == history_url %}active red{% endif %} item">操作记录</a> {% endcomment %}
+        {% comment %} <a href="{{ admin_url }}" class="{% if request.get_full_path == admin_url %}active red{% endif %} item">后台管理</a> {% endcomment %}
+
+    </div>
+    <div class="right menu">
+        {% if request.user.username %}
+            <div class="ui item">
+                您好，{{ request.user.username }}
+            </div>
+        {% endif %}
+        {% comment %} {%  if not request.user.username  %}
+            <div class="ui item">
+                未登录
+            </div>
+        {% else %}
+            <div class="ui item">
+                您好，{{ request.user.username }}
+            </div>
+            <a class="ui item" href="{% url 'logout' %}">
+                切换用户
+            </a>
+        {% endif %} {% endcomment %}
+  </div>
+</div>
+
+<script>
+$('.ui.fluid.search.dropdown')
+.dropdown();
+$('#db_table-select').val('{{ request.session.db_table }}');
+
+
+
+</script>
+<script>
+function submitForm(){
+//获取form表单对象
+var form = document.getElementById("myform");
+form.submit();//form表单提交
+
+}
+
+
+
+</script>
+
+
+
